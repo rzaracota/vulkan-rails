@@ -1110,13 +1110,7 @@ private:
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     vkDestroyRenderPass(device, renderPass, nullptr);
 
-    // for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-    //     vkDestroyImageView(device, swapChainImageViews[i], nullptr);
-    // }
-
     swapChainImageViews.clear();
-
-    //vkDestroySwapchainKHR(device, swapChain, nullptr);
 
     swapChain = nullptr;
   }
