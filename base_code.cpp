@@ -1056,17 +1056,11 @@ private:
 
     vkDestroyCommandPool(device, commandPool, nullptr);
 
-    device = nullptr;    //vkDestroyDevice(device, nullptr);
-
-    //DestroyDebugReportCallbackEXT(instance, callback, nullptr);
-
+    device = nullptr;
+    
     callback = nullptr;
 
-    //vkDestroySurfaceKHR(instance, surface, nullptr);
-
     surface = nullptr;
-    
-    //vkDestroyInstance(instance, nullptr);
 
     instance = nullptr;
 
