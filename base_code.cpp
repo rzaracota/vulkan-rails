@@ -713,11 +713,6 @@ private:
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
       throw std::runtime_error("failed to create descriptor set layout!");
     }
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-pipelineLayoutInfo.setLayoutCount = 1;
-pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
   }
 
   void createGraphicsPipeline() {
@@ -805,7 +800,7 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     rasterizer.lineWidth = 1.0f;
 
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f; // Optional
@@ -859,11 +854,13 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     colorBlending.blendConstants[2] = 0.0f; // Optional
     colorBlending.blendConstants[3] = 0.0f; // Optional
 
+    VkDescriptorSetLayout setLayouts[] = { descriptorSetLayout };
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0; // Optional
-    pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = setLayouts;
+
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = 0; // Optional
 
@@ -1091,6 +1088,63 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 		 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		 uniformBuffer, uniformBufferMemory);
   }
+
+  void createDescriptorPool() {
+    VkDescriptorPoolSize poolSize = {};
+
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+
+    poolInfo.maxSets = 1;
+    
+    if (vkCreateDescriptorPool(device, &poolInfo, nullptr,
+			       &descriptorPool) != VK_SUCCESS) {
+      throw std::runtime_error("failed to create descriptor pool!");
+    }
+  }
+
+  void createDescriptorSet() {
+    VkDescriptorSetLayout layouts[] = {descriptorSetLayout};
+    VkDescriptorSetAllocateInfo allocInfo = {};
+
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = layouts;
+
+    if (vkAllocateDescriptorSets(device, &allocInfo,
+				 &descriptorSet) != VK_SUCCESS) {
+      throw std::runtime_error("failed to allocate descriptor set!");
+    }
+
+    VkDescriptorBufferInfo bufferInfo = {};
+
+    bufferInfo.buffer = uniformBuffer;
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(UniformBufferObject);
+
+    VkWriteDescriptorSet descriptorWrite = {};
+
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = descriptorSet;
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+
+    descriptorWrite.pBufferInfo = &bufferInfo;
+    descriptorWrite.pImageInfo = nullptr; // Optional
+    descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+  }
   
   void createCommandBuffers() {
     commandBuffers.resize(swapChainFramebuffers.size());
@@ -1132,6 +1186,10 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
       vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
+      vkCmdBindDescriptorSets(commandBuffers[i],
+			      VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+			      0, 1, &descriptorSet, 0, nullptr);
+
       VkBuffer vertexBuffers[] = { vertexBuffer };
       VkDeviceSize offsets[] = { 0 };
 
@@ -1150,7 +1208,6 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
       if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
 	throw std::runtime_error("failed to record command buffer!");
       }
-
     }
   }
 
@@ -1199,7 +1256,6 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     createSwapChain();
     createImageViews();
     createRenderPass();
-    createDescriptorSetLayout();
     createGraphicsPipeline();
     createFramebuffers();
     createCommandBuffers();
@@ -1221,6 +1277,8 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffer();
+    createDescriptorPool();
+    createDescriptorSet();
     createCommandBuffers();
     createSemaphores();
   }
@@ -1333,6 +1391,8 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
   void cleanup() {
     cleanupSwapChain();
 
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
     vkDestroyBuffer(device, uniformBuffer, nullptr);
@@ -1362,6 +1422,9 @@ pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     glfwTerminate();
   }
 
+  VkDescriptorPool descriptorPool;
+  VkDescriptorSet descriptorSet;
+  
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;
   VkBuffer indexBuffer;
