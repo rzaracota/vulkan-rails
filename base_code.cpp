@@ -23,6 +23,10 @@
 
 #include "stb/stb_image.h"
 
+#define TINYOBJLOADER_IMPLEMENTATON
+
+#include "obj/tiny_obj_loader.h"
+
 struct UniformBufferObject {
   glm::mat4 model;
   glm::mat4 view;
