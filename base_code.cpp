@@ -1579,11 +1579,11 @@ private:
       renderPassInfo.renderArea.offset = {0, 0};
       renderPassInfo.renderArea.extent = swapChainExtent;
 
-      VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+      VkClearColorValue clearColor = {0.0f, 0.3f, 0.0f, 1.0f};
 
       std::array<VkClearValue, 2> clearValues = {};
 
-      clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+      clearValues[0].color = clearColor;
       clearValues[1].depthStencil = {1.0f, 0};
 
       renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -1672,6 +1672,33 @@ private:
     createFramebuffers();
     createCommandBuffers();
   }
+
+  void createCheckerboardImage() {
+    VkImageCreateInfo imageInfo = {};
+
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.pNext = nullptr;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    imageInfo.extent.width = WIDTH;
+    imageInfo.extent.height = HEIGHT;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.queueFamilyIndexCount = 0;
+    imageInfo.pQueueFamilyIndices = nullptr;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    imageInfo.flags = 0;
+    imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    if (vkCreateImage(device, &imageInfo, nullptr, &checkerboardImage) !=
+	VK_SUCCESS) {
+      throw std::runtime_error("Failed to create checkerboard image.");
+    }
+  }
   
   void initVulkan() {
     createInstance();
@@ -1698,6 +1725,8 @@ private:
     createDescriptorSet();
     createCommandBuffers();
     createSemaphores();
+
+    createCheckerboardImage();
   }
 
   void drawFrame() {
@@ -1808,6 +1837,9 @@ private:
   void cleanup() {
     cleanupSwapChain();
 
+    vkDestroyImage(device, checkerboardImage, nullptr);
+    vkFreeMemory(device, checkerboardImageMemory, nullptr);
+    
     vkDestroySampler(device, textureSampler, nullptr);
     vkDestroyImageView(device, textureImageView, nullptr);
 
@@ -1844,6 +1876,9 @@ private:
 
     glfwTerminate();
   }
+
+  VkImage checkerboardImage;
+  VkDeviceMemory checkerboardImageMemory;
 
   VkImage depthImage;
   VkDeviceMemory depthImageMemory;
