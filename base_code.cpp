@@ -1258,6 +1258,7 @@ private:
   }
   
   void createTextureImage() {
+    int texWidth, texHeight;
     int texChannels;
     stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth,
 				&texHeight, &texChannels, STBI_rgb_alpha);
@@ -1295,6 +1296,9 @@ private:
 		      static_cast<uint32_t>(texWidth),
 		      static_cast<uint32_t>(texHeight));
 
+    textureWidth = static_cast<uint32_t>(texWidth);
+    textureHeight = static_cast<uint32_t>(texHeight);
+    
     // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
     // 			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
     // 			  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -1684,8 +1688,8 @@ private:
     imageInfo.pNext = nullptr;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-    imageInfo.extent.width = texWidth;
-    imageInfo.extent.height = texHeight;
+    imageInfo.extent.width = textureWidth;
+    imageInfo.extent.height = textureHeight;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
     imageInfo.arrayLayers = 1;
@@ -1732,8 +1736,8 @@ private:
     
     vkMapMemory(device, dmem, 0, memReq.size, 0, (void**)&pImgMem);
 
-    for (int i = 0; i < texHeight; i++) {
-      for (int j = 0; j < texWidth; j++) {
+    for (int i = 0; i < textureHeight; i++) {
+      for (int j = 0; j < textureWidth; j++) {
 	pImgMem[0] = rand() % 128;
 	pImgMem[1] = rand() % 128;
 	pImgMem[2] = rand() % 128;
@@ -1808,8 +1812,8 @@ private:
     pRegions.dstOffset = {0, 0, 0};
     
     pRegions.extent = {
-      texWidth,
-      texHeight,
+      textureWidth,
+      textureHeight,
       1
     };
 
@@ -1977,7 +1981,7 @@ private:
   VkDeviceMemory depthImageMemory;
   VkImageView depthImageView;
 
-  int texWidth, texHeight;
+  uint32_t textureWidth, textureHeight;
   
   VkImageView textureImageView;
   VkSampler textureSampler;
