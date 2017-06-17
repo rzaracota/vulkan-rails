@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 #include <set>
+#include <cstdlib>
 #include <cstring>
 #include <functional>
 #include <algorithm>
@@ -93,7 +94,7 @@ namespace std {
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-const std::string MODEL_PATH = "chalet/chalet.obj";
+const std::string MODEL_PATH = "chalet/cube.obj";
 const std::string TEXTURE_PATH = "chalet/chalet.jpg";
 
 const std::vector<const char*> validationLayers = {
@@ -1293,9 +1294,9 @@ private:
 		      static_cast<uint32_t>(texWidth),
 		      static_cast<uint32_t>(texHeight));
 
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
-			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
+    // 			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    // 			  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
@@ -1589,6 +1590,8 @@ private:
       renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
       renderPassInfo.pClearValues = clearValues.data();
 
+      copyImage(commandBuffers[i]);
+      
       vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
       vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
@@ -1692,12 +1695,65 @@ private:
     imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     imageInfo.flags = 0;
     imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
 
     if (vkCreateImage(device, &imageInfo, nullptr, &checkerboardImage) !=
 	VK_SUCCESS) {
       throw std::runtime_error("Failed to create checkerboard image.");
     }
+
+    // fill in image
+    VkMemoryRequirements memReq;
+    VkMemoryAllocateInfo memAllocInfo;
+    VkDeviceMemory & dmem = checkerboardImageMemory;
+    unsigned char *pImgMem;
+
+    memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memAllocInfo.pNext = nullptr;
+
+    vkGetImageMemoryRequirements(device, checkerboardImage, &memReq);
+
+    memAllocInfo.allocationSize = memReq.size;
+
+    memAllocInfo.memoryTypeIndex =
+      findMemoryType(memReq.memoryTypeBits,
+		     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    
+    auto res = vkAllocateMemory(device, &memAllocInfo, nullptr, &dmem);
+
+    if (res != VK_SUCCESS) {
+      throw std::runtime_error(
+	      "Failed to allocate memory for checkerboard image.");
+    }
+    
+    vkBindImageMemory(device, checkerboardImage, dmem, 0);
+    
+    vkMapMemory(device, dmem, 0, memReq.size, 0, (void**)&pImgMem);
+
+    for (int i = 0; i < HEIGHT; i++) {
+      for (int j = 0; j < WIDTH; j++) {
+	pImgMem[0] = rand() % 128;
+	pImgMem[1] = rand() % 128;
+	pImgMem[2] = rand() % 128;
+	pImgMem[3] = 255;
+
+	pImgMem += 4;
+      }
+    }
+    
+    // change pixels
+
+    VkMappedMemoryRange memRange;
+    memRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    memRange.pNext = nullptr;
+    memRange.memory = dmem;
+    memRange.offset = 0;
+    memRange.size = memReq.size;
+
+    vkFlushMappedMemoryRanges(device, 1, &memRange);
+
+    vkUnmapMemory(device, dmem);
   }
   
   void initVulkan() {
@@ -1723,12 +1779,48 @@ private:
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSet();
+    createCheckerboardImage();
     createCommandBuffers();
     createSemaphores();
-
-    createCheckerboardImage();
   }
 
+  void copyImage(VkCommandBuffer & cmdBuffer) {
+    VkImageLayout srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    VkImageLayout dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+    uint32_t regionCount = 1;
+    VkImageCopy pRegions;
+
+    VkImageSubresourceLayers srLayers;
+    
+    srLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    srLayers.mipLevel = 0;
+    srLayers.baseArrayLayer = 0;
+    srLayers.layerCount = 1;
+
+    pRegions.srcSubresource = srLayers;
+    
+    pRegions.srcOffset = {0, 0, 0};
+
+    pRegions.dstSubresource = srLayers;
+    
+    pRegions.dstOffset = {0, 0, 0};
+    
+    pRegions.extent = {
+      WIDTH,
+      HEIGHT,
+      1
+    };
+
+    vkCmdCopyImage(cmdBuffer, checkerboardImage, srcImageLayout,
+		   textureImage, dstImageLayout,
+		   regionCount, &pRegions);
+    
+    // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
+    // 			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    // 			  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  }
+  
   void drawFrame() {
     uint32_t imageIndex;
 
@@ -1801,7 +1893,7 @@ private:
 
     UniformBufferObject ubo = {};
 
-    ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f),
+    ubo.model = glm::rotate(glm::mat4(), time * glm::radians(10.0f),
 			    glm::vec3(0.0f, 0.0f, 1.0f));
 
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
