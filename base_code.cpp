@@ -598,7 +598,8 @@ private:
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
     createInfo.imageExtent = extent;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+      VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
     uint32_t queueFamilyIndices[] = {(uint32_t) indices.graphicsFamily, (uint32_t) indices.presentFamily};
@@ -684,7 +685,7 @@ private:
 
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
+    
     VkAttachmentReference colorAttachmentRef = {};
 
     colorAttachmentRef.attachment = 0;
@@ -1257,7 +1258,7 @@ private:
   }
   
   void createTextureImage() {
-    int texWidth, texHeight, texChannels;
+    int texChannels;
     stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth,
 				&texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -1683,8 +1684,8 @@ private:
     imageInfo.pNext = nullptr;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-    imageInfo.extent.width = WIDTH;
-    imageInfo.extent.height = HEIGHT;
+    imageInfo.extent.width = texWidth;
+    imageInfo.extent.height = texHeight;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
     imageInfo.arrayLayers = 1;
@@ -1731,8 +1732,8 @@ private:
     
     vkMapMemory(device, dmem, 0, memReq.size, 0, (void**)&pImgMem);
 
-    for (int i = 0; i < HEIGHT; i++) {
-      for (int j = 0; j < WIDTH; j++) {
+    for (int i = 0; i < texHeight; i++) {
+      for (int j = 0; j < texWidth; j++) {
 	pImgMem[0] = rand() % 128;
 	pImgMem[1] = rand() % 128;
 	pImgMem[2] = rand() % 128;
@@ -1787,7 +1788,7 @@ private:
   void copyImage(VkCommandBuffer & cmdBuffer) {
     VkImageLayout srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     VkImageLayout dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
+    
     uint32_t regionCount = 1;
     VkImageCopy pRegions;
 
@@ -1807,8 +1808,8 @@ private:
     pRegions.dstOffset = {0, 0, 0};
     
     pRegions.extent = {
-      WIDTH,
-      HEIGHT,
+      texWidth,
+      texHeight,
       1
     };
 
@@ -1975,6 +1976,8 @@ private:
   VkImage depthImage;
   VkDeviceMemory depthImageMemory;
   VkImageView depthImageView;
+
+  int texWidth, texHeight;
   
   VkImageView textureImageView;
   VkSampler textureSampler;
