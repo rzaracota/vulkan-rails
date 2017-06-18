@@ -31,18 +31,35 @@
 
 #include "obj/tiny_obj_loader.h"
 
+template <typename handleType>
+static inline bool safe_destroy_vk(void (*func)(VkDevice, handleType,
+						const VkAllocationCallbacks *),
+				   VkDevice dev, handleType obj,
+				   VkAllocationCallbacks * param) {
+  if (func == nullptr) {
+    throw std::runtime_error("invalid destroy func");
+  } else if (obj == VK_NULL_HANDLE) {
+    throw std::runtime_error("invalid null handle");
+  } else {
+    func(dev, obj, param);
+  }
+}
+
 struct Texture {
   Texture(VkDevice dev, std::string filename) : path(filename),
 							device(dev) {
+
   }
 
   ~Texture() {
     std::cout << "Destroying texture: " << path << std::endl;
 
-    if (sampler != VK_NULL_HANDLE) {
-      vkDestroySampler(device, sampler, nullptr);
-    }
+    // if (sampler != VK_NULL_HANDLE) {
+    //   vkDestroySampler(device, sampler, nullptr);
+    // }
 
+    safe_destroy_vk<VkSampler>(vkDestroySampler, device, sampler, nullptr);
+    
     if (imageView != VK_NULL_HANDLE) {
       vkDestroyImageView(device, imageView, nullptr);
     }
@@ -63,13 +80,10 @@ struct Texture {
   VkSampler sampler;
   VkDeviceMemory imageMemory;
 
-  bool operator==(const Texture & that) {
+  bool operator==(const Texture & that) const {
     std::cout << "operator==" << std::endl;
 
-    path = that.path;
-
-    width = that.width;
-    height = that.height;
+    return path == that.path;
   }
 
 protected:
@@ -129,6 +143,39 @@ struct Vertex {
   }
 };
 
+struct Mesh {
+  Mesh(VkDevice dev, std::string filename) : device(dev), path(filename) {
+  }
+
+  ~Mesh() {
+    safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, vertexBuffer, nullptr);
+    safe_destroy_vk<VkDeviceMemory>(vkFreeMemory, device,
+				    vertexBufferMemory, nullptr);
+
+    safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, indexBuffer, nullptr);
+    safe_destroy_vk<VkDeviceMemory>(vkFreeMemory, device, indexBufferMemory,
+				    nullptr);
+  }
+
+  bool operator==(const Mesh & that) const {
+    return path == that.path;
+  }
+
+  VkBuffer vertexBuffer;
+  VkDeviceMemory vertexBufferMemory;
+
+  VkBuffer indexBuffer;
+  VkDeviceMemory indexBufferMemory;
+
+  std::vector<Vertex> vertices;
+  std::vector<uint32_t> indices;
+protected:
+  std::string path;
+  
+private:
+  VkDevice device;
+};
+
 namespace std {
     template<> struct hash<Vertex> {
         size_t operator()(Vertex const& vertex) const {
@@ -142,7 +189,7 @@ namespace std {
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-const std::string MODEL_PATH = "chalet/cube.obj";
+const std::string MODEL_PATH = "chalet/chalet.obj";
 const std::string TEXTURE_PATH = "chalet/chalet.jpg";
 
 const std::vector<const char*> validationLayers = {
@@ -1415,19 +1462,23 @@ private:
     }
   }
 
-  void loadModel() {
+  void loadModel(const std::string filename = MODEL_PATH) {
     tinyobj::attrib_t attrib;
 
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
 
     std::string err;
-
+    
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err,
-			  MODEL_PATH.c_str())) {
+			  filename.c_str())) {
       throw std::runtime_error(err);
     }
 
+    Mesh * mesh = new Mesh(device, filename);
+
+    meshes.insert({ filename, mesh }); 
+    
     std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
 
     for (const auto & shape : shapes) {
@@ -1448,18 +1499,36 @@ private:
 	vertex.color = {1.0f, 1.0f, 1.0f};
 
 	if (uniqueVertices.count(vertex) == 0) {
-	  uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+	  uniqueVertices[vertex] =
+	    static_cast<uint32_t>(mesh->vertices.size());
 
-	  vertices.push_back(vertex);
+	  mesh->vertices.push_back(vertex);
 	}
 
-	indices.push_back(uniqueVertices[vertex]);
+	mesh->indices.push_back(uniqueVertices[vertex]);
       }
     }
   }
 
-  void createVertexBuffer() {
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+  Mesh * getMesh(const std::string filename) {
+    Mesh * result = nullptr;
+
+    auto iter = meshes.find(MODEL_PATH);
+
+    if (iter == meshes.cend()) {
+      throw std::runtime_error("Model is not loaded: " + MODEL_PATH);
+    }
+
+    result = iter->second;
+
+    return result;
+  }
+  
+  void createVertexBuffer(std::string filename = MODEL_PATH) {
+    Mesh * mesh = getMesh(filename);
+    
+    VkDeviceSize bufferSize = sizeof(mesh->vertices[0]) *
+      mesh->vertices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -1473,23 +1542,26 @@ private:
 
     vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
 
-    memcpy(data, vertices.data(), (size_t) bufferSize);
+    memcpy(data, mesh->vertices.data(), (size_t) bufferSize);
 
     vkUnmapMemory(device, stagingBufferMemory);
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
 		 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		 vertexBuffer, vertexBufferMemory);
+		 mesh->vertexBuffer, mesh->vertexBufferMemory);
 
-    copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+    copyBuffer(stagingBuffer, mesh->vertexBuffer, bufferSize);
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
   }
 
-  void createIndexBuffer() {
-    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+  void createIndexBuffer(const std::string filename = MODEL_PATH) {
+    Mesh * mesh = getMesh(filename);
+    
+    VkDeviceSize bufferSize = sizeof(mesh->indices[0]) *
+      mesh->indices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -1497,12 +1569,12 @@ private:
 
     void* data;
     vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, indices.data(), (size_t) bufferSize);
+    memcpy(data, mesh->indices.data(), (size_t) bufferSize);
     vkUnmapMemory(device, stagingBufferMemory);
 
-    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mesh->indexBuffer, mesh->indexBufferMemory);
 
-    copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+    copyBuffer(stagingBuffer, mesh->indexBuffer, bufferSize);
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
@@ -1631,6 +1703,8 @@ private:
   }
 
   void createCommandBuffers() {
+    Mesh * mesh = getMesh(MODEL_PATH);
+    
     commandBuffers.resize(swapChainFramebuffers.size());
 
     VkCommandBufferAllocateInfo allocInfo = {};
@@ -1671,8 +1745,6 @@ private:
       renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
       renderPassInfo.pClearValues = clearValues.data();
 
-      copyImage(commandBuffers[i]);
-
       vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
       vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
@@ -1681,16 +1753,17 @@ private:
 			      VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
 			      0, 1, &descriptorSet, 0, nullptr);
 
-      VkBuffer vertexBuffers[] = { vertexBuffer };
+      VkBuffer vertexBuffers[] = { mesh->vertexBuffer };
       VkDeviceSize offsets[] = { 0 };
 
       vkCmdBindVertexBuffers(commandBuffers[i],
 			     0, 1, vertexBuffers, offsets);
 
-      vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0,
+      vkCmdBindIndexBuffer(commandBuffers[i], mesh->indexBuffer, 0,
 			   VK_INDEX_TYPE_UINT32);
 
-      vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()),
+      vkCmdDrawIndexed(commandBuffers[i],
+		       static_cast<uint32_t>(mesh->indices.size()),
 		       1, 0, 0, 0);
 
 
@@ -2060,18 +2133,24 @@ private:
       }
     }
 
+    for (auto iter = meshes.cbegin(); iter != meshes.cend(); iter++) {
+      if (iter->second != nullptr) {
+    	delete iter->second;
+
+    	iter = meshes.erase(iter);
+
+    	if (iter == meshes.cend()) {
+    	  break;
+    	}
+      }
+    }
+    
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
     vkDestroyBuffer(device, uniformBuffer, nullptr);
     vkFreeMemory(device, uniformBufferMemory, nullptr);
-
-    vkDestroyBuffer(device, indexBuffer, nullptr);
-    vkFreeMemory(device, indexBufferMemory, nullptr);
-
-    vkDestroyBuffer(device, vertexBuffer, nullptr);
-    vkFreeMemory(device, vertexBufferMemory, nullptr);
 
     vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
@@ -2099,17 +2178,14 @@ private:
   VkImageView depthImageView;
 
   std::map<std::string, Texture*> textures;
-
+  std::map<std::string, Mesh*> meshes;
+  
   VkDescriptorPool descriptorPool;
   VkDescriptorSet descriptorSet;
 
   std::vector<Vertex> vertices;
   std::vector<uint32_t> indices;
 
-  VkBuffer vertexBuffer;
-  VkDeviceMemory vertexBufferMemory;
-  VkBuffer indexBuffer;
-  VkDeviceMemory indexBufferMemory;
   VkBuffer uniformBuffer;
   VkDeviceMemory uniformBufferMemory;
 
