@@ -1,10 +1,10 @@
 tool = glslangValidator
 toolOptions = -V
 
-all: vertex.spv fragment.spv
+all: vert.spv frag.spv
 
-vertex.spv: vertex.vert
+vert.spv: vertex.vert
 	$(tool) $(toolOptions) $<
-fragment.spv: fragment.frag
+frag.spv: fragment.frag
 	$(tool) $(toolOptions) $<
-
+.PHONY: all
