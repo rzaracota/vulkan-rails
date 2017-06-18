@@ -11,6 +11,7 @@
 #include <functional>
 #include <algorithm>
 #include <array>
+#include <memory> // shared_ptr
 
 #include <unordered_map>
 
@@ -148,6 +149,8 @@ struct Mesh {
   }
 
   ~Mesh() {
+    std::cout << "Mesh dtor: " << path << std::endl;
+    
     safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, vertexBuffer, nullptr);
     safe_destroy_vk<VkDeviceMemory>(vkFreeMemory, device,
 				    vertexBufferMemory, nullptr);
@@ -1475,7 +1478,7 @@ private:
       throw std::runtime_error(err);
     }
 
-    Mesh * mesh = new Mesh(device, filename);
+    auto mesh = std::make_shared<Mesh>(device, filename);
 
     meshes.insert({ filename, mesh }); 
     
@@ -1510,22 +1513,18 @@ private:
     }
   }
 
-  Mesh * getMesh(const std::string filename) {
-    Mesh * result = nullptr;
-
+  std::shared_ptr<Mesh> getMesh(const std::string filename) {
     auto iter = meshes.find(MODEL_PATH);
 
     if (iter == meshes.cend()) {
       throw std::runtime_error("Model is not loaded: " + MODEL_PATH);
     }
 
-    result = iter->second;
-
-    return result;
+    return iter->second;
   }
   
   void createVertexBuffer(std::string filename = MODEL_PATH) {
-    Mesh * mesh = getMesh(filename);
+    auto mesh = getMesh(filename);
     
     VkDeviceSize bufferSize = sizeof(mesh->vertices[0]) *
       mesh->vertices.size();
@@ -1558,7 +1557,7 @@ private:
   }
 
   void createIndexBuffer(const std::string filename = MODEL_PATH) {
-    Mesh * mesh = getMesh(filename);
+    auto mesh = getMesh(filename);
     
     VkDeviceSize bufferSize = sizeof(mesh->indices[0]) *
       mesh->indices.size();
@@ -1703,7 +1702,7 @@ private:
   }
 
   void createCommandBuffers() {
-    Mesh * mesh = getMesh(MODEL_PATH);
+    auto mesh = getMesh(MODEL_PATH);
     
     commandBuffers.resize(swapChainFramebuffers.size());
 
@@ -2133,17 +2132,19 @@ private:
       }
     }
 
-    for (auto iter = meshes.cbegin(); iter != meshes.cend(); iter++) {
-      if (iter->second != nullptr) {
-    	delete iter->second;
+    // for (auto iter = meshes.cbegin(); iter != meshes.cend(); iter++) {
+    //   if (iter->second != nullptr) {
+    // 	delete iter->second;
 
-    	iter = meshes.erase(iter);
+    // 	iter = meshes.erase(iter);
 
-    	if (iter == meshes.cend()) {
-    	  break;
-    	}
-      }
-    }
+    // 	if (iter == meshes.cend()) {
+    // 	  break;
+    // 	}
+    //   }
+    // }
+
+    meshes.clear();
     
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
@@ -2178,7 +2179,7 @@ private:
   VkImageView depthImageView;
 
   std::map<std::string, Texture*> textures;
-  std::map<std::string, Mesh*> meshes;
+  std::map<std::string, std::shared_ptr<Mesh>> meshes;
   
   VkDescriptorPool descriptorPool;
   VkDescriptorSet descriptorSet;
