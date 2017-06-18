@@ -31,6 +31,54 @@
 
 #include "obj/tiny_obj_loader.h"
 
+struct Texture {
+  Texture(VkDevice dev, std::string filename) : path(filename),
+							device(dev) {
+  }
+
+  ~Texture() {
+    std::cout << "Destroying texture: " << path << std::endl;
+
+    if (sampler != VK_NULL_HANDLE) {
+      vkDestroySampler(device, sampler, nullptr);
+    }
+
+    if (imageView != VK_NULL_HANDLE) {
+      vkDestroyImageView(device, imageView, nullptr);
+    }
+
+    if (image != VK_NULL_HANDLE) {
+      vkDestroyImage(device, image, nullptr);
+    }
+
+    if (imageMemory != VK_NULL_HANDLE) {
+      vkFreeMemory(device, imageMemory, nullptr);
+    }
+  }
+
+  uint32_t width, height;
+
+  VkImage image;
+  VkImageView imageView;
+  VkSampler sampler;
+  VkDeviceMemory imageMemory;
+  
+  bool operator==(const Texture & that) {
+    std::cout << "operator==" << std::endl;
+    
+    path = that.path;
+
+    width = that.width;
+    height = that.height;
+  }
+
+protected:
+  std::string path;
+
+private:
+  VkDevice device;
+};
+
 struct UniformBufferObject {
   glm::mat4 model;
   glm::mat4 view;
@@ -1257,11 +1305,14 @@ private:
     vkBindImageMemory(device, image, imageMemory, 0);
   }
   
-  void createTextureImage() {
+  void createTextureImage(const std::string filename = TEXTURE_PATH) {
+    Texture * t = new Texture(device, filename);
+
     int texWidth, texHeight;
     int texChannels;
-    stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth,
+    stbi_uc* pixels = stbi_load(filename.c_str(), &texWidth,
 				&texHeight, &texChannels, STBI_rgb_alpha);
+
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) {
@@ -1286,18 +1337,26 @@ private:
 
     stbi_image_free(pixels);
 
-    createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+    createImage(texWidth, texHeight,
+		VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, t->image, t->imageMemory);
 
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
+    transitionImageLayout(t->image, VK_FORMAT_R8G8B8A8_UNORM,
 			  VK_IMAGE_LAYOUT_PREINITIALIZED,
 			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    copyBufferToImage(stagingBuffer, textureImage,
+    copyBufferToImage(stagingBuffer, t->image,
 		      static_cast<uint32_t>(texWidth),
 		      static_cast<uint32_t>(texHeight));
 
     textureWidth = static_cast<uint32_t>(texWidth);
     textureHeight = static_cast<uint32_t>(texHeight);
+
+    t->width = textureWidth;
+    t->height = textureHeight;
+
+    textures.insert({ filename, t });
     
     // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
     // 			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -1307,13 +1366,31 @@ private:
     vkFreeMemory(device, stagingBufferMemory, nullptr);
   }
   
-  void createTextureImageView() {
-    textureImageView = createImageView(textureImage,
-				       VK_FORMAT_R8G8B8A8_UNORM,
-				       VK_IMAGE_ASPECT_COLOR_BIT);
+  void createTextureImageView(std::string filename = TEXTURE_PATH) {
+    auto iter = textures.find(filename);
+
+    if (iter == textures.cend()) {
+      throw std::runtime_error("Failed to create texture image view: " +
+			       filename);
+    }
+
+    Texture * tex = iter->second;
+    
+    tex->imageView = createImageView(tex->image,
+				     VK_FORMAT_R8G8B8A8_UNORM,
+				     VK_IMAGE_ASPECT_COLOR_BIT);
   }
 
-  void createTextureSampler() {
+  void createTextureSampler(std::string filename = TEXTURE_PATH) {
+    auto iter = textures.find(filename);
+
+    if (iter == textures.cend()) {
+      throw std::runtime_error("Failed to create texture sampler: " +
+			       filename);
+    }
+
+    Texture * tex = iter->second;
+
     VkSamplerCreateInfo samplerInfo = {};
 
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1340,9 +1417,9 @@ private:
     samplerInfo.maxLod = 0.0f;
 
     if (vkCreateSampler(device, &samplerInfo, nullptr,
-			&textureSampler) != VK_SUCCESS) {
+			&tex->sampler) != VK_SUCCESS) {
       throw std::runtime_error("failed to create texture sampler!");
-    }    
+    }
   }
 
   void loadModel() {
@@ -1492,9 +1569,15 @@ private:
 
     VkDescriptorImageInfo imageInfo = {};
 
+    auto iter = textures.find(TEXTURE_PATH);
+
+    if (iter == textures.cend()) {
+      throw std::runtime_error("Texture not loaded: " + TEXTURE_PATH);
+    }
+    
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = textureImageView;
-    imageInfo.sampler = textureSampler;
+    imageInfo.imageView = iter->second->imageView;
+    imageInfo.sampler = iter->second->sampler;
     
     std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
@@ -1790,6 +1873,15 @@ private:
   }
 
   void copyImage(VkCommandBuffer & cmdBuffer) {
+    auto iter = textures.find(TEXTURE_PATH);
+
+    if (iter == textures.cend()) {
+      throw std::runtime_error("Failed to find requested texture: " +
+			       TEXTURE_PATH);
+    }
+
+    Texture * texture = iter->second;
+
     VkImageLayout srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     VkImageLayout dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     
@@ -1812,13 +1904,13 @@ private:
     pRegions.dstOffset = {0, 0, 0};
     
     pRegions.extent = {
-      textureWidth,
-      textureHeight,
+      texture->width,
+      texture->height,
       1
     };
 
     vkCmdCopyImage(cmdBuffer, checkerboardImage, srcImageLayout,
-		   textureImage, dstImageLayout,
+		   texture->image, dstImageLayout,
 		   regionCount, &pRegions);
     
     // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
@@ -1936,12 +2028,18 @@ private:
 
     vkDestroyImage(device, checkerboardImage, nullptr);
     vkFreeMemory(device, checkerboardImageMemory, nullptr);
-    
-    vkDestroySampler(device, textureSampler, nullptr);
-    vkDestroyImageView(device, textureImageView, nullptr);
 
-    vkDestroyImage(device, textureImage, nullptr);
-    vkFreeMemory(device, textureImageMemory, nullptr);
+    for (auto iter = textures.cbegin(); iter != textures.cend(); iter++) {
+      if (iter->second != nullptr) {
+    	delete iter->second;
+
+    	iter = textures.erase(iter);
+
+    	if (iter == textures.cend()) {
+    	  break;
+    	}
+      }
+    }
 
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
@@ -1982,6 +2080,8 @@ private:
   VkImageView depthImageView;
 
   uint32_t textureWidth, textureHeight;
+
+  std::map<std::string, Texture*> textures;
   
   VkImageView textureImageView;
   VkSampler textureSampler;
@@ -2037,8 +2137,6 @@ public:
     mainLoop();
     cleanup();
   }
-
-
 };
 
 int main() {
