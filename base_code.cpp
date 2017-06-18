@@ -1356,7 +1356,7 @@ private:
   }
 
   void createTextureImage(const std::string filename = TEXTURE_PATH) {
-    Texture * t = new Texture(device, filename);
+    auto texture = std::make_shared<Texture>(device, filename);
 
     int texWidth, texHeight;
     int texChannels;
@@ -1390,20 +1390,21 @@ private:
     createImage(texWidth, texHeight,
 		VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, t->image, t->imageMemory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture->image,
+		texture->imageMemory);
 
-    transitionImageLayout(t->image, VK_FORMAT_R8G8B8A8_UNORM,
+    transitionImageLayout(texture->image, VK_FORMAT_R8G8B8A8_UNORM,
 			  VK_IMAGE_LAYOUT_PREINITIALIZED,
 			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    copyBufferToImage(stagingBuffer, t->image,
+    copyBufferToImage(stagingBuffer, texture->image,
 		      static_cast<uint32_t>(texWidth),
 		      static_cast<uint32_t>(texHeight));
 
-    t->width = static_cast<uint32_t>(texWidth);
-    t->height = static_cast<uint32_t>(texHeight);
+    texture->width = static_cast<uint32_t>(texWidth);
+    texture->height = static_cast<uint32_t>(texHeight);
 
-    textures.insert({ filename, t });
+    textures.insert({ filename, texture });
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
@@ -1417,7 +1418,7 @@ private:
 			       filename);
     }
 
-    Texture * tex = iter->second;
+    auto tex = iter->second;
 
     tex->imageView = createImageView(tex->image,
 				     VK_FORMAT_R8G8B8A8_UNORM,
@@ -1432,7 +1433,7 @@ private:
 			       filename);
     }
 
-    Texture * tex = iter->second;
+    auto tex = iter->second;
 
     VkSamplerCreateInfo samplerInfo = {};
 
@@ -1839,7 +1840,7 @@ private:
 			       TEXTURE_PATH);
     }
 
-    Texture * tex = iter->second;
+    auto tex = iter->second;
 
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.pNext = nullptr;
@@ -1971,7 +1972,7 @@ private:
 			       TEXTURE_PATH);
     }
 
-    Texture * texture = iter->second;
+    auto texture = iter->second;
 
     VkImageLayout srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     VkImageLayout dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -2120,29 +2121,7 @@ private:
     vkDestroyImage(device, checkerboardImage, nullptr);
     vkFreeMemory(device, checkerboardImageMemory, nullptr);
 
-    for (auto iter = textures.cbegin(); iter != textures.cend(); iter++) {
-      if (iter->second != nullptr) {
-    	delete iter->second;
-
-    	iter = textures.erase(iter);
-
-    	if (iter == textures.cend()) {
-    	  break;
-    	}
-      }
-    }
-
-    // for (auto iter = meshes.cbegin(); iter != meshes.cend(); iter++) {
-    //   if (iter->second != nullptr) {
-    // 	delete iter->second;
-
-    // 	iter = meshes.erase(iter);
-
-    // 	if (iter == meshes.cend()) {
-    // 	  break;
-    // 	}
-    //   }
-    // }
+    textures.clear();
 
     meshes.clear();
     
@@ -2178,7 +2157,7 @@ private:
   VkDeviceMemory depthImageMemory;
   VkImageView depthImageView;
 
-  std::map<std::string, Texture*> textures;
+  std::map<std::string, std::shared_ptr<Texture>> textures;
   std::map<std::string, std::shared_ptr<Mesh>> meshes;
   
   VkDescriptorPool descriptorPool;
