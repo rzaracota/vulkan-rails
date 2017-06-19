@@ -192,8 +192,8 @@ namespace std {
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-const std::string MODEL_PATH = "chalet/chalet.obj";
-const std::string TEXTURE_PATH = "chalet/chalet.jpg";
+const std::string MODEL_PATH = "chalet/cube.obj";
+const std::string TEXTURE_PATH = "chalet/cube.png";
 
 const std::vector<const char*> validationLayers = {
   "VK_LAYER_LUNARG_standard_validation"
@@ -1481,8 +1481,8 @@ private:
 
     auto mesh = std::make_shared<Mesh>(device, filename);
 
-    meshes.insert({ filename, mesh }); 
-    
+    meshes.insert({ filename, mesh });
+
     std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
 
     for (const auto & shape : shapes) {
@@ -1581,7 +1581,8 @@ private:
   }
 
   void createUniformBuffer() {
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject) *
+      2;
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -1630,7 +1631,7 @@ private:
 
     bufferInfo.buffer = uniformBuffer;
     bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(UniformBufferObject);
+    bufferInfo.range = sizeof(UniformBufferObject) * 2;
 
     VkDescriptorImageInfo imageInfo = {};
 
@@ -1720,6 +1721,7 @@ private:
 
     for (size_t i = 0; i < commandBuffers.size(); i++) {
       VkCommandBufferBeginInfo beginInfo = {};
+
       beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
       beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
       beginInfo.pInheritanceInfo = nullptr; // Optional
@@ -1764,7 +1766,7 @@ private:
 
       vkCmdDrawIndexed(commandBuffers[i],
 		       static_cast<uint32_t>(mesh->indices.size()),
-		       1, 0, 0, 0);
+		       2, 0, 0, 0);
 
 
       vkCmdEndRenderPass(commandBuffers[i]);
@@ -2084,7 +2086,7 @@ private:
 
     ubo.model = glm::rotate(glm::mat4(), time * glm::radians(10.0f),
 			    glm::vec3(0.0f, 0.0f, 1.0f));
-
+    
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
 			   glm::vec3(0.0f, 0.0f, 0.0f),
 			   glm::vec3(0.0f, 0.0f, 1.0f));
@@ -2094,11 +2096,21 @@ private:
 
     ubo.proj[1][1] *= -1;
 
-    void * data;
+    UniformBufferObject * data;
 
-    vkMapMemory(device, uniformBufferMemory, 0, sizeof (ubo), 0, &data);
+    vkMapMemory(device, uniformBufferMemory, 0, sizeof (ubo) * 2,
+		0, (void **)&data);
 
     memcpy(data, &ubo, sizeof (ubo));
+
+    ubo.model = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.0, 0.0)) *
+      glm::rotate(glm::mat4(), time * glm::radians(10.0f) * -1.0f,
+     			    glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // ubo.model = glm::rotate(glm::mat4(), time * glm::radians(10.0f) * -1.0f,
+    // 			    glm::vec3(0.0f, 0.0f, 1.0f));
+
+    memcpy(data + 1, &ubo, sizeof (ubo));
 
     vkUnmapMemory(device, uniformBufferMemory);
   }
