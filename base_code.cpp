@@ -196,10 +196,11 @@ namespace std {
     };
 }
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1280;
+const int HEIGHT = 720;
 
 const std::string MODEL_PATH = "chalet/chalet.obj";
+const std::string CUBE_PATH = "chalet/cube.obj";
 const std::string TEXTURE_PATH = "chalet/cube.png";
 
 const std::vector<const char*> validationLayers = {
@@ -1949,6 +1950,12 @@ private:
     vkUnmapMemory(device, dmem);
   }
 
+  void loadMesh(std::string filename) {
+    loadModel(filename);
+    createVertexBuffer(filename);
+    createIndexBuffer(filename);
+  }
+  
   void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -1966,12 +1973,8 @@ private:
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
-    loadModel("chalet/cube.obj");
-    createVertexBuffer("chalet/cube.obj");
-    createIndexBuffer("chalet/cube.obj");
-    loadModel(MODEL_PATH);
-    createVertexBuffer(MODEL_PATH);
-    createIndexBuffer(MODEL_PATH);
+    loadMesh(CUBE_PATH);
+    loadMesh(MODEL_PATH);
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSet();
@@ -2100,6 +2103,8 @@ private:
 
     ubo.model = glm::rotate(glm::mat4(), time * glm::radians(10.0f),
 			    glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ubo.model *= glm::scale(glm::mat4(), glm::vec3(4.0f, 4.0f, 4.0f));
     
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
 			   glm::vec3(0.0f, 0.0f, 0.0f),
@@ -2117,7 +2122,7 @@ private:
 
     memcpy(data, &ubo, sizeof (ubo));
 
-    ubo.model = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 1.0, 0.0)) *
+    ubo.model = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 2.0, 0.0)) *
       glm::rotate(glm::mat4(), time * glm::radians(10.0f) * -1.0f,
      			    glm::vec3(0.0f, 0.0f, 1.0f));
 
