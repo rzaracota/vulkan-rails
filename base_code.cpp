@@ -164,6 +164,13 @@ struct Mesh {
     return path == that.path;
   }
 
+  friend std::ostream & operator<<(std::ostream & output,
+				   const Mesh & mesh) {
+    output << "Mesh: " << mesh.path;
+
+    return output;
+  }
+
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;
 
@@ -172,7 +179,7 @@ struct Mesh {
 
   std::vector<Vertex> vertices;
   std::vector<uint32_t> indices;
-protected:
+
   std::string path;
   
 private:
@@ -192,7 +199,7 @@ namespace std {
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-const std::string MODEL_PATH = "chalet/cube.obj";
+const std::string MODEL_PATH = "chalet/chalet.obj";
 const std::string TEXTURE_PATH = "chalet/cube.png";
 
 const std::vector<const char*> validationLayers = {
@@ -1515,10 +1522,10 @@ private:
   }
 
   std::shared_ptr<Mesh> getMesh(const std::string filename) {
-    auto iter = meshes.find(MODEL_PATH);
+    auto iter = meshes.find(filename);
 
     if (iter == meshes.cend()) {
-      throw std::runtime_error("Model is not loaded: " + MODEL_PATH);
+      throw std::runtime_error("Model is not loaded: " + filename);
     }
 
     return iter->second;
@@ -1526,7 +1533,7 @@ private:
   
   void createVertexBuffer(std::string filename = MODEL_PATH) {
     auto mesh = getMesh(filename);
-    
+
     VkDeviceSize bufferSize = sizeof(mesh->vertices[0]) *
       mesh->vertices.size();
 
@@ -1704,8 +1711,6 @@ private:
   }
 
   void createCommandBuffers() {
-    auto mesh = getMesh(MODEL_PATH);
-    
     commandBuffers.resize(swapChainFramebuffers.size());
 
     VkCommandBufferAllocateInfo allocInfo = {};
@@ -1755,19 +1760,25 @@ private:
 			      VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
 			      0, 1, &descriptorSet, 0, nullptr);
 
-      VkBuffer vertexBuffers[] = { mesh->vertexBuffer };
-      VkDeviceSize offsets[] = { 0 };
+      int meshID = 0;
+      
+      for (auto iter = meshes.cbegin(); iter != meshes.cend();
+	   iter++, meshID++) {
+	auto mesh = iter->second;
 
-      vkCmdBindVertexBuffers(commandBuffers[i],
-			     0, 1, vertexBuffers, offsets);
+	VkBuffer vertexBuffers[] = { mesh->vertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
 
-      vkCmdBindIndexBuffer(commandBuffers[i], mesh->indexBuffer, 0,
-			   VK_INDEX_TYPE_UINT32);
+	vkCmdBindVertexBuffers(commandBuffers[i],
+			       0, 1, vertexBuffers, offsets);
 
-      vkCmdDrawIndexed(commandBuffers[i],
-		       static_cast<uint32_t>(mesh->indices.size()),
-		       2, 0, 0, 0);
+	vkCmdBindIndexBuffer(commandBuffers[i], mesh->indexBuffer, 0,
+			     VK_INDEX_TYPE_UINT32);
 
+	vkCmdDrawIndexed(commandBuffers[i],
+			 static_cast<uint32_t>(mesh->indices.size()),
+			 1, 0, 0, meshID);
+      }
 
       vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -1955,9 +1966,12 @@ private:
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
-    loadModel();
-    createVertexBuffer();
-    createIndexBuffer();
+    loadModel("chalet/cube.obj");
+    createVertexBuffer("chalet/cube.obj");
+    createIndexBuffer("chalet/cube.obj");
+    loadModel(MODEL_PATH);
+    createVertexBuffer(MODEL_PATH);
+    createIndexBuffer(MODEL_PATH);
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSet();
