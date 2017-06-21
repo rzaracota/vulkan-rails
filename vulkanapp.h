@@ -1,3 +1,5 @@
+#pragma once
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -306,7 +308,7 @@ static std::vector<char> readFile(const std::string & filename) {
   return buffer;
 }
 
-class HelloTriangleApplication {
+class VulkanApp {
 private:
   GLFWwindow* window;
 
@@ -351,8 +353,8 @@ private:
 			      int height) {
     if (width == 0 || height == 0) return;
 
-    HelloTriangleApplication* app =
-      reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+    VulkanApp* app =
+      reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
 
     app->recreateSwapChain();
   }
@@ -366,7 +368,7 @@ private:
     window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 
     glfwSetWindowUserPointer(window, this);
-    glfwSetWindowSizeCallback(window, HelloTriangleApplication::onWindowResized);
+    glfwSetWindowSizeCallback(window, VulkanApp::onWindowResized);
   }
 
   void createInstance() {
@@ -2104,16 +2106,3 @@ public:
     cleanup();
   }
 };
-
-int main() {
-  HelloTriangleApplication app;
-
-  try {
-    app.run();
-  } catch (const std::runtime_error& e) {
-    std::cerr << e.what() << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  return EXIT_SUCCESS;
-}
