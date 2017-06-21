@@ -1850,112 +1850,6 @@ private:
     createCommandBuffers();
   }
 
-  void createCheckerboardImage() {
-    VkImageCreateInfo imageInfo = {};
-
-    auto iter = textures.find(TEXTURE_PATH);
-
-    if (iter == textures.cend()) {
-      throw std::runtime_error("Texture is not loaded: " +
-			       TEXTURE_PATH);
-    }
-
-    auto tex = iter->second;
-
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.pNext = nullptr;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-    imageInfo.extent.width = tex->width;
-    imageInfo.extent.height = tex->height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.queueFamilyIndexCount = 0;
-    imageInfo.pQueueFamilyIndices = nullptr;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    imageInfo.flags = 0;
-    imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-
-    if (vkCreateImage(device, &imageInfo, nullptr, &checkerboardImage) !=
-	VK_SUCCESS) {
-      throw std::runtime_error("Failed to create checkerboard image.");
-    }
-
-    // fill in image
-    VkMemoryRequirements memReq;
-    VkMemoryAllocateInfo memAllocInfo;
-    VkDeviceMemory & dmem = checkerboardImageMemory;
-    unsigned char *pImgMem;
-
-    memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memAllocInfo.pNext = nullptr;
-
-    vkGetImageMemoryRequirements(device, checkerboardImage, &memReq);
-
-    memAllocInfo.allocationSize = memReq.size;
-
-    memAllocInfo.memoryTypeIndex =
-      findMemoryType(memReq.memoryTypeBits,
-		     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-		     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    auto res = vkAllocateMemory(device, &memAllocInfo, nullptr, &dmem);
-
-    if (res != VK_SUCCESS) {
-      throw std::runtime_error(
-	      "Failed to allocate memory for checkerboard image.");
-    }
-
-    vkBindImageMemory(device, checkerboardImage, dmem, 0);
-
-    vkMapMemory(device, dmem, 0, memReq.size, 0, (void**)&pImgMem);
-
-    for (int i = 0; i < tex->height; i++) {
-      unsigned char r, g, b;
-
-      r = g = b = 0;
-
-      int tile_width = 64;
-      
-      for (int j = 0; j < tex->width / 2; j++) {
-	pImgMem[0] = r;
-	pImgMem[1] = g;
-  	pImgMem[2] = b;
-	pImgMem[3] = 255;
-
-	pImgMem += 4;
-      }
-
-      r = g = b = 255;
-
-      for (int j = tex->width / 2; j < tex->width; j++) {
-	pImgMem[0] = r;
-	pImgMem[1] = g;
-  	pImgMem[2] = b;
-	pImgMem[3] = 255;
-
-	pImgMem += 4;
-      }
-    }
-
-    // change pixels
-
-    VkMappedMemoryRange memRange;
-    memRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    memRange.pNext = nullptr;
-    memRange.memory = dmem;
-    memRange.offset = 0;
-    memRange.size = memReq.size;
-
-    vkFlushMappedMemoryRanges(device, 1, &memRange);
-
-    vkUnmapMemory(device, dmem);
-  }
-
   void createMeshDescriptorSet(Mesh & mesh) {
   }
   
@@ -2009,55 +1903,8 @@ private:
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSets();
-    createCheckerboardImage();
     createCommandBuffers();
     createSemaphores();
-  }
-
-  void copyImage(VkCommandBuffer & cmdBuffer) {
-    auto iter = textures.find(TEXTURE_PATH);
-
-    if (iter == textures.cend()) {
-      throw std::runtime_error("Failed to find requested texture: " +
-			       TEXTURE_PATH);
-    }
-
-    auto texture = iter->second;
-
-    VkImageLayout srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    VkImageLayout dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-    uint32_t regionCount = 1;
-    VkImageCopy pRegions;
-
-    VkImageSubresourceLayers srLayers;
-
-    srLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    srLayers.mipLevel = 0;
-    srLayers.baseArrayLayer = 0;
-    srLayers.layerCount = 1;
-
-    pRegions.srcSubresource = srLayers;
-
-    pRegions.srcOffset = {0, 0, 0};
-
-    pRegions.dstSubresource = srLayers;
-
-    pRegions.dstOffset = {0, 0, 0};
-
-    pRegions.extent = {
-      texture->width,
-      texture->height,
-      1
-    };
-
-    vkCmdCopyImage(cmdBuffer, checkerboardImage, srcImageLayout,
-		   texture->image, dstImageLayout,
-		   regionCount, &pRegions);
-
-    // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
-    // 			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-    // 			  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
   }
 
   void drawFrame() {
@@ -2180,9 +2027,6 @@ private:
   void cleanup() {
     cleanupSwapChain();
 
-    vkDestroyImage(device, checkerboardImage, nullptr);
-    vkFreeMemory(device, checkerboardImageMemory, nullptr);
-
     textures.clear();
 
     meshes.clear();
@@ -2211,9 +2055,6 @@ private:
 
     glfwTerminate();
   }
-
-  VkImage checkerboardImage;
-  VkDeviceMemory checkerboardImageMemory;
 
   VkImage depthImage;
   VkDeviceMemory depthImageMemory;
