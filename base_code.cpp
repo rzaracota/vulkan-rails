@@ -32,6 +32,13 @@
 
 #include "obj/tiny_obj_loader.h"
 
+const int WIDTH = 1280;
+const int HEIGHT = 720;
+
+const std::string MODEL_PATH = "chalet/chalet.obj";
+const std::string CUBE_PATH = "chalet/cube.obj";
+const std::string TEXTURE_PATH = "chalet/cube.png";
+
 template <typename handleType>
 static inline bool safe_destroy_vk(void (*func)(VkDevice, handleType,
 						const VkAllocationCallbacks *),
@@ -145,7 +152,9 @@ struct Vertex {
 };
 
 struct Mesh {
-  Mesh(VkDevice dev, std::string filename) : device(dev), path(filename) {
+  Mesh(VkDevice dev, std::string filename,
+       std::string texPath = TEXTURE_PATH) : device(dev), path(filename),
+					     texturePath(texPath) {
   }
 
   ~Mesh() {
@@ -181,6 +190,10 @@ struct Mesh {
   std::vector<uint32_t> indices;
 
   std::string path;
+
+  VkDescriptorSet descriptorSet;
+
+  std::string texturePath;
   
 private:
   VkDevice device;
@@ -195,13 +208,6 @@ namespace std {
         }
     };
 }
-
-const int WIDTH = 1280;
-const int HEIGHT = 720;
-
-const std::string MODEL_PATH = "chalet/chalet.obj";
-const std::string CUBE_PATH = "chalet/cube.obj";
-const std::string TEXTURE_PATH = "chalet/cube.png";
 
 const std::vector<const char*> validationLayers = {
   "VK_LAYER_LUNARG_standard_validation"
@@ -1602,10 +1608,10 @@ private:
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
 
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = 1;
+    poolSizes[0].descriptorCount = 128;
 
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = 1;
+    poolSizes[1].descriptorCount = 128;
 
     VkDescriptorPoolCreateInfo poolInfo = {};
 
@@ -1613,7 +1619,7 @@ private:
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
 
-    poolInfo.maxSets = 1;
+    poolInfo.maxSets = 256;
 
     if (vkCreateDescriptorPool(device, &poolInfo, nullptr,
 			       &descriptorPool) != VK_SUCCESS) {
@@ -1621,7 +1627,7 @@ private:
     }
   }
 
-  void createDescriptorSet() {
+  void createDescriptorSet(Mesh & mesh) {
     VkDescriptorSetLayout layouts[] = {descriptorSetLayout};
     VkDescriptorSetAllocateInfo allocInfo = {};
 
@@ -1631,22 +1637,22 @@ private:
     allocInfo.pSetLayouts = layouts;
 
     if (vkAllocateDescriptorSets(device, &allocInfo,
-				 &descriptorSet) != VK_SUCCESS) {
+				 &mesh.descriptorSet) != VK_SUCCESS) {
       throw std::runtime_error("failed to allocate descriptor set!");
     }
 
     VkDescriptorBufferInfo bufferInfo = {};
 
     bufferInfo.buffer = uniformBuffer;
-    bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(UniformBufferObject) * 2;
+    bufferInfo.offset = 0; // increase by sizeof (ubo)?
+    bufferInfo.range = sizeof(UniformBufferObject) * meshes.size();
 
     VkDescriptorImageInfo imageInfo = {};
 
-    auto iter = textures.find(TEXTURE_PATH);
+    auto iter = textures.find(mesh.texturePath);
 
     if (iter == textures.cend()) {
-      throw std::runtime_error("Texture not loaded: " + TEXTURE_PATH);
+      throw std::runtime_error("Texture not loaded: " + mesh.texturePath);
     }
 
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1656,7 +1662,7 @@ private:
     std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = descriptorSet;
+    descriptorWrites[0].dstSet = mesh.descriptorSet;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
 
@@ -1668,7 +1674,7 @@ private:
     descriptorWrites[0].pTexelBufferView = nullptr; // Optional
 
     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstSet = mesh.descriptorSet;
     descriptorWrites[1].dstBinding = 1;
     descriptorWrites[1].dstArrayElement = 0;
     descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1757,10 +1763,6 @@ private:
 
       vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-      vkCmdBindDescriptorSets(commandBuffers[i],
-			      VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-			      0, 1, &descriptorSet, 0, nullptr);
-
       int meshID = 0;
       
       for (auto iter = meshes.cbegin(); iter != meshes.cend();
@@ -1770,6 +1772,10 @@ private:
 	VkBuffer vertexBuffers[] = { mesh->vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 
+	vkCmdBindDescriptorSets(commandBuffers[i],
+				VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+				0, 1, &mesh->descriptorSet, 0, nullptr);
+	
 	vkCmdBindVertexBuffers(commandBuffers[i],
 			       0, 1, vertexBuffers, offsets);
 
@@ -1950,10 +1956,38 @@ private:
     vkUnmapMemory(device, dmem);
   }
 
+  void createMeshDescriptorSet(Mesh & mesh) {
+  }
+  
   void loadMesh(std::string filename) {
     loadModel(filename);
     createVertexBuffer(filename);
     createIndexBuffer(filename);
+
+    // createDescriptorSets
+  }
+
+  void loadTexture(Mesh & mesh, std::string textureFilename) {
+    mesh.texturePath = textureFilename;
+
+    createTextureImage(mesh.texturePath);
+    createTextureImageView(mesh.texturePath);
+    createTextureSampler(mesh.texturePath);
+  }
+  
+  void createDescriptorSets() {
+    auto mesh = getMesh(MODEL_PATH);
+
+    loadTexture(*mesh, "chalet/chalet.jpg");
+
+    mesh = getMesh(CUBE_PATH);
+
+    loadTexture(*mesh, "chalet/cube.png");
+
+    std::for_each(meshes.cbegin(), meshes.cend(), [&] (auto item) {
+	createDescriptorSet(*item.second);
+
+      });
   }
   
   void initVulkan() {
@@ -1970,14 +2004,11 @@ private:
     createCommandPool();
     createDepthResources();
     createFramebuffers();
-    createTextureImage();
-    createTextureImageView();
-    createTextureSampler();
     loadMesh(CUBE_PATH);
-    loadMesh(MODEL_PATH);
+    loadMesh(MODEL_PATH);    
     createUniformBuffer();
     createDescriptorPool();
-    createDescriptorSet();
+    createDescriptorSets();
     createCheckerboardImage();
     createCommandBuffers();
     createSemaphores();
@@ -2192,10 +2223,6 @@ private:
   std::map<std::string, std::shared_ptr<Mesh>> meshes;
   
   VkDescriptorPool descriptorPool;
-  VkDescriptorSet descriptorSet;
-
-  std::vector<Vertex> vertices;
-  std::vector<uint32_t> indices;
 
   VkBuffer uniformBuffer;
   VkDeviceMemory uniformBufferMemory;
