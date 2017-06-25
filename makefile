@@ -5,7 +5,7 @@ ld_flags = -lglfw -lvulkan
 
 all: driver shaders
 
-driver: main.cpp vulkanapp.h
+driver: main.cpp filemap.h vulkanapp.h
 	$(c++) $(cpp_flags) $(ld_flags) $< -o driver
 shaders:
 	make -C shaders
