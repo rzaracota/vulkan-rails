@@ -1,3 +1,5 @@
+#include "filemap.h"
+
 #include "vulkanapp.h"
 
 int main() {
