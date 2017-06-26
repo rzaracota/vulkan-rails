@@ -215,6 +215,8 @@ private:
   VkDevice device;
 };
 
+#include <random>
+
 struct TerrainPatch {
 public:
   TerrainPatch(const int patchSize = 16, const double patchSpacing = 1.0) :
@@ -225,7 +227,7 @@ public:
   void debug_display() const {
     using std::cout;
     using std::endl;
-
+    
     cout << "Terrain Patch - size: " << size << " spacing: " << spacing <<
       endl;
 
@@ -239,6 +241,14 @@ public:
   static double getHeight(const int x, const int z) {
     double result = 0.0;
 
+    double lower = 1, upper = 2;
+
+    std::uniform_real_distribution<double> distribution(lower, upper);
+
+    std::default_random_engine engine((x + 1) * (z + 1));
+
+    result = distribution(engine);
+
     return result;
   }
   
@@ -251,9 +261,12 @@ public:
 	Vertex v;
 
 	v.pos.x = originX + spacing * i;
-	v.pos.y = getHeight(i, j);
-	v.pos.z = originZ + spacing * j;
+	v.pos.z = getHeight(i, j);
+	v.pos.y = originZ + spacing * j;
 
+	v.texCoord.x = 1.0 * j / size;
+	v.texCoord.y = 1.0 * i / size;
+	
 	vertices.push_back(v);	
       }
     }
@@ -2112,6 +2125,12 @@ private:
     // 			    glm::vec3(0.0f, 0.0f, 1.0f));
 
     memcpy(data + 1, &ubo, sizeof (ubo));
+
+    ubo.model = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, -0.8)) *
+      glm::rotate(glm::mat4(), time * glm::radians(10.0f),
+			    glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // terrain
     memcpy(data + 2, &ubo, sizeof (ubo));
 
     vkUnmapMemory(device, uniformBufferMemory);
