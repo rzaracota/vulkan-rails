@@ -2,15 +2,19 @@
 
 #include "vulkanapp.h"
 
-int main() {
-  VulkanApp app;
+#include "terrain.h"
 
-  try {
-    app.run();
-  } catch (const std::runtime_error& e) {
-    std::cerr << e.what() << std::endl;
-    return EXIT_FAILURE;
-  }
+int main() {
+  test_terrain();
+
+  // VulkanApp app;
+
+  // try {
+  //   app.run();
+  // } catch (const std::runtime_error& e) {
+  //   std::cerr << e.what() << std::endl;
+  //   return EXIT_FAILURE;
+  // }
 
   return EXIT_SUCCESS;
 }
