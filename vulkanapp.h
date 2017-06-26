@@ -41,6 +41,8 @@ const std::string MODEL_PATH = "chalet/chalet.obj";
 const std::string CUBE_PATH = "chalet/cube.obj";
 const std::string TEXTURE_PATH = "chalet/cube.png";
 
+const std::string patchIdentifier = "terrainPatch";
+
 template <typename handleType>
 static inline bool safe_destroy_vk(void (*func)(VkDevice, handleType,
 						const VkAllocationCallbacks *),
@@ -49,7 +51,7 @@ static inline bool safe_destroy_vk(void (*func)(VkDevice, handleType,
   if (func == nullptr) {
     throw std::runtime_error("invalid destroy func");
   } else if (obj == VK_NULL_HANDLE) {
-    throw std::runtime_error("invalid null handle");
+    std::cerr << "safe_destroy: invalid null handle" << std::endl;
   } else {
     func(dev, obj, param);
   }
@@ -58,7 +60,6 @@ static inline bool safe_destroy_vk(void (*func)(VkDevice, handleType,
 struct Texture {
   Texture(VkDevice dev, std::string filename) : path(filename),
 							device(dev) {
-
   }
 
   ~Texture() {
@@ -119,6 +120,13 @@ struct Vertex {
       texCoord == other.texCoord;
   }
 
+  friend std::ostream & operator<<(std::ostream & output,
+				   const Vertex & that) {
+    output << that.pos.x << that.pos.y << that.pos.z;
+
+    return output;
+  }
+  
   static VkVertexInputBindingDescription getBindingDescription() {
     VkVertexInputBindingDescription bindingDescription = {};
 
@@ -182,6 +190,12 @@ struct Mesh {
     return output;
   }
 
+  void setData(const std::vector<Vertex> & newVertices,
+	       const std::vector<uint32_t> & newIndices) {
+    vertices = newVertices;
+    indices = newIndices;
+  }
+  
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;
 
@@ -199,6 +213,77 @@ struct Mesh {
   
 private:
   VkDevice device;
+};
+
+struct TerrainPatch {
+public:
+  TerrainPatch(const int patchSize = 16, const double patchSpacing = 1.0) :
+                 size(patchSize), spacing(patchSpacing) {
+    generate();
+  }
+
+  void debug_display() const {
+    using std::cout;
+    using std::endl;
+
+    cout << "Terrain Patch - size: " << size << " spacing: " << spacing <<
+      endl;
+
+    cout << "Vertices:" << endl;
+
+    for (auto v : vertices) {
+      cout << v << endl;
+    }
+  }
+
+  static double getHeight(const int x, const int z) {
+    double result = 0.0;
+
+    return result;
+  }
+  
+  void generate() {
+    const double originZ = -1.0 * (size * spacing / 2.0);
+    const double originX = originZ;
+    
+    for (int j = 0; j < size; j++) {
+      for (int i = 0; i < size; i++) {
+	Vertex v;
+
+	v.pos.x = originX + spacing * i;
+	v.pos.y = getHeight(i, j);
+	v.pos.z = originZ + spacing * j;
+
+	vertices.push_back(v);	
+      }
+    }
+
+    for (int j = 0; j < size; j++) {
+      for (int i = 0; i < size; i++) {
+	int fl, fr, br, bl;
+
+	fl = j * size + i;
+	fr = fl + 1;
+
+	bl = (j + 1) * size + i;
+	br = bl + 1;
+
+	indices.push_back(fl);
+	indices.push_back(fr);
+	indices.push_back(br);
+
+	indices.push_back(fl);
+	indices.push_back(br);
+	indices.push_back(bl);
+      }
+    }
+  }
+
+  const int size;
+  const double spacing;
+
+  std::vector<Vertex> vertices;
+  std::vector<uint32_t> indices;
 };
 
 namespace std {
@@ -1598,7 +1683,7 @@ private:
 
   void createUniformBuffer() {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject) *
-      2;
+      meshes.size();
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -1863,6 +1948,19 @@ private:
     // createDescriptorSets
   }
 
+  void createTerrain() {
+    TerrainPatch patch;
+
+    auto mesh = std::make_shared<Mesh>(device, patchIdentifier);
+
+    mesh->setData(patch.vertices, patch.indices);
+
+    meshes.insert({ patchIdentifier, mesh });
+    
+    createVertexBuffer(patchIdentifier);
+    createIndexBuffer(patchIdentifier);
+  }
+
   void loadTexture(Mesh & mesh, std::string textureFilename) {
     mesh.texturePath = textureFilename;
 
@@ -1880,9 +1978,12 @@ private:
 
     loadTexture(*mesh, "chalet/cube.png");
 
+    mesh = getMesh(patchIdentifier);
+
+    loadTexture(*mesh, "textures/grass.png");
+    
     std::for_each(meshes.cbegin(), meshes.cend(), [&] (auto item) {
 	createDescriptorSet(*item.second);
-
       });
   }
   
@@ -1901,7 +2002,8 @@ private:
     createDepthResources();
     createFramebuffers();
     loadMesh(CUBE_PATH);
-    loadMesh(MODEL_PATH);    
+    loadMesh(MODEL_PATH);
+    createTerrain();
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSets();
@@ -2010,6 +2112,7 @@ private:
     // 			    glm::vec3(0.0f, 0.0f, 1.0f));
 
     memcpy(data + 1, &ubo, sizeof (ubo));
+    memcpy(data + 2, &ubo, sizeof (ubo));
 
     vkUnmapMemory(device, uniformBufferMemory);
   }
