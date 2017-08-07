@@ -1,2 +1,2 @@
 # vulkan-rails
-A horizontal rail shoot with vulkan attempting to be simple and completable.
+A horizontal rail shooter with vulkan attempting to be simple and completable.
