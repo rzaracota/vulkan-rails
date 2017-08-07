@@ -9,4 +9,7 @@ driver: main.cpp filemap.h vulkanapp.h terrain.h
 	$(c++) $(cpp_flags) $(ld_flags) $< -o driver
 shaders:
 	make -C shaders
-.PHONY: shaders all
+test:
+	./driver
+
+.PHONY: shaders all test
