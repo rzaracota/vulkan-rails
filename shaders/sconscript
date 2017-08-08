@@ -1,3 +1,26 @@
 # Build the spir-v shaders in this directory
 
+#
+
+#all: vert.spv frag.spv
+
+#vert.spv: vertex.vert
+#	$(tool) $(toolOptions) $<
+#frag.spv: fragment.frag
+#	$(tool) $(toolOptions) $<
+#.PHONY: all
+
+tool = "glslangValidator"
+toolOptions = "-V"
+
 print("Building spir-v shaders")
+
+
+shader_builder = Builder(action = tool + " " + toolOptions + " " +
+	       '$SOURCE' + " -o " + '$TARGET')
+
+env = Environment(BUILDERS = {'Shader' : shader_builder})
+
+env.Shader('vert.spv', 'vertex.vert')
+env.Shader('frag.spv', 'fragment.frag')
+

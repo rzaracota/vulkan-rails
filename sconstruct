@@ -14,4 +14,6 @@
 
 #.PHONY: shaders all test
 
+SConscript(['shaders/sconscript'])
+
 Program('driver', 'main.cpp', LIBS=['glfw', 'vulkan'])
