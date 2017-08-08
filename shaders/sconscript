@@ -1,0 +1,3 @@
+# Build the spir-v shaders in this directory
+
+print("Building spir-v shaders")
