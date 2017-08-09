@@ -17,3 +17,13 @@
 SConscript(['shaders/sconscript'])
 
 Program('driver', 'main.cpp', LIBS=['glfw', 'vulkan'])
+
+Default('driver')
+
+import os
+
+env = Environment(ENV = os.environ)
+
+test = env.Command('test', None, "./driver")
+
+Depends(test, 'driver')
