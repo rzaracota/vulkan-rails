@@ -26,6 +26,8 @@
 
 #include <chrono>
 
+#include "vulkanvertex.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "stb/stb_image.h"
@@ -70,7 +72,7 @@ struct Texture {
     // }
 
     safe_destroy_vk<VkSampler>(vkDestroySampler, device, sampler, nullptr);
-    
+
     if (imageView != VK_NULL_HANDLE) {
       vkDestroyImageView(device, imageView, nullptr);
     }
@@ -110,57 +112,6 @@ struct UniformBufferObject {
   glm::mat4 proj;
 };
 
-struct Vertex {
-  glm::vec3 pos;
-  glm::vec3 color;
-  glm::vec2 texCoord;
-
-  bool operator==(const Vertex& other) const {
-    return pos == other.pos && color == other.color &&
-      texCoord == other.texCoord;
-  }
-
-  friend std::ostream & operator<<(std::ostream & output,
-				   const Vertex & that) {
-    output << that.pos.x << that.pos.y << that.pos.z;
-
-    return output;
-  }
-  
-  static VkVertexInputBindingDescription getBindingDescription() {
-    VkVertexInputBindingDescription bindingDescription = {};
-
-    bindingDescription.binding = 0;
-    bindingDescription.stride = sizeof (Vertex);
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    return bindingDescription;
-  }
-
-  static std::array<VkVertexInputAttributeDescription, 3>
-           getAttributeDescriptions() {
-    std::array<VkVertexInputAttributeDescription, 3>
-      attributeDescriptions = {};
-
-    attributeDescriptions[0].binding = 0;
-    attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-    attributeDescriptions[1].binding = 0;
-    attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-    attributeDescriptions[2].binding = 0;
-    attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-
-    return attributeDescriptions;
-  }
-};
-
 struct Mesh {
   Mesh(VkDevice dev, std::string filename,
        std::string texPath = TEXTURE_PATH) : device(dev), path(filename),
@@ -169,7 +120,7 @@ struct Mesh {
 
   ~Mesh() {
     std::cout << "Mesh dtor: " << path << std::endl;
-    
+
     safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, vertexBuffer, nullptr);
     safe_destroy_vk<VkDeviceMemory>(vkFreeMemory, device,
 				    vertexBufferMemory, nullptr);
@@ -195,7 +146,7 @@ struct Mesh {
     vertices = newVertices;
     indices = newIndices;
   }
-  
+
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;
 
@@ -210,7 +161,7 @@ struct Mesh {
   VkDescriptorSet descriptorSet;
 
   std::string texturePath;
-  
+
 private:
   VkDevice device;
 };
@@ -227,7 +178,7 @@ public:
   void debug_display() const {
     using std::cout;
     using std::endl;
-    
+
     cout << "Terrain Patch - size: " << size << " spacing: " << spacing <<
       endl;
 
@@ -251,11 +202,11 @@ public:
 
     return result;
   }
-  
+
   void generate() {
     const double originZ = -1.0 * (size * spacing / 2.0);
     const double originX = originZ;
-    
+
     for (int j = 0; j < size; j++) {
       for (int i = 0; i < size; i++) {
 	Vertex v;
@@ -266,8 +217,8 @@ public:
 
 	v.texCoord.x = 1.0 * j / size;
 	v.texCoord.y = 1.0 * i / size;
-	
-	vertices.push_back(v);	
+
+	vertices.push_back(v);
       }
     }
 
@@ -1587,7 +1538,7 @@ private:
     std::vector<tinyobj::material_t> materials;
 
     std::string err;
-    
+
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err,
 			  filename.c_str())) {
       throw std::runtime_error(err);
@@ -1637,7 +1588,7 @@ private:
 
     return iter->second;
   }
-  
+
   void createVertexBuffer(std::string filename = MODEL_PATH) {
     auto mesh = getMesh(filename);
 
@@ -1673,7 +1624,7 @@ private:
 
   void createIndexBuffer(const std::string filename = MODEL_PATH) {
     auto mesh = getMesh(filename);
-    
+
     VkDeviceSize bufferSize = sizeof(mesh->indices[0]) *
       mesh->indices.size();
 
@@ -1864,7 +1815,7 @@ private:
       vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
       int meshID = 0;
-      
+
       for (auto iter = meshes.cbegin(); iter != meshes.cend();
 	   iter++, meshID++) {
 	auto mesh = iter->second;
@@ -1875,7 +1826,7 @@ private:
 	vkCmdBindDescriptorSets(commandBuffers[i],
 				VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
 				0, 1, &mesh->descriptorSet, 0, nullptr);
-	
+
 	vkCmdBindVertexBuffers(commandBuffers[i],
 			       0, 1, vertexBuffers, offsets);
 
@@ -1952,7 +1903,7 @@ private:
 
   void createMeshDescriptorSet(Mesh & mesh) {
   }
-  
+
   void loadMesh(std::string filename) {
     loadModel(filename);
     createVertexBuffer(filename);
@@ -1969,7 +1920,7 @@ private:
     mesh->setData(patch.vertices, patch.indices);
 
     meshes.insert({ patchIdentifier, mesh });
-    
+
     createVertexBuffer(patchIdentifier);
     createIndexBuffer(patchIdentifier);
   }
@@ -1981,7 +1932,7 @@ private:
     createTextureImageView(mesh.texturePath);
     createTextureSampler(mesh.texturePath);
   }
-  
+
   void createDescriptorSets() {
     auto mesh = getMesh(MODEL_PATH);
 
@@ -1994,12 +1945,12 @@ private:
     mesh = getMesh(patchIdentifier);
 
     loadTexture(*mesh, "textures/grass.png");
-    
+
     std::for_each(meshes.cbegin(), meshes.cend(), [&] (auto item) {
 	createDescriptorSet(*item.second);
       });
   }
-  
+
   void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -2100,7 +2051,7 @@ private:
 			    glm::vec3(0.0f, 0.0f, 1.0f));
 
     ubo.model *= glm::scale(glm::mat4(), glm::vec3(4.0f, 4.0f, 4.0f));
-    
+
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
 			   glm::vec3(0.0f, 0.0f, 0.0f),
 			   glm::vec3(0.0f, 0.0f, 1.0f));
@@ -2154,7 +2105,7 @@ private:
     textures.clear();
 
     meshes.clear();
-    
+
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
@@ -2186,7 +2137,7 @@ private:
 
   std::map<std::string, std::shared_ptr<Texture>> textures;
   std::map<std::string, std::shared_ptr<Mesh>> meshes;
-  
+
   VkDescriptorPool descriptorPool;
 
   VkBuffer uniformBuffer;
