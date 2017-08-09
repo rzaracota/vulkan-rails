@@ -26,10 +26,19 @@
 
 #include <chrono>
 
+const int WIDTH = 1280;
+const int HEIGHT = 720;
+
+const std::string MODEL_PATH = "chalet/chalet.obj";
+const std::string CUBE_PATH = "chalet/cube.obj";
+const std::string TEXTURE_PATH = "chalet/cube.png";
+
 #include "vulkanutil.h"
 
 #include "vulkanvertex.h"
 #include "vulkantexture.h"
+
+#include "vulkanmesh.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -39,73 +48,12 @@
 
 #include "obj/tiny_obj_loader.h"
 
-const int WIDTH = 1280;
-const int HEIGHT = 720;
-
-const std::string MODEL_PATH = "chalet/chalet.obj";
-const std::string CUBE_PATH = "chalet/cube.obj";
-const std::string TEXTURE_PATH = "chalet/cube.png";
-
 const std::string patchIdentifier = "terrainPatch";
 
 struct UniformBufferObject {
   glm::mat4 model;
   glm::mat4 view;
   glm::mat4 proj;
-};
-
-struct Mesh {
-  Mesh(VkDevice dev, std::string filename,
-       std::string texPath = TEXTURE_PATH) : device(dev), path(filename),
-					     texturePath(texPath) {
-  }
-
-  ~Mesh() {
-    std::cout << "Mesh dtor: " << path << std::endl;
-
-    safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, vertexBuffer, nullptr);
-    safe_destroy_vk<VkDeviceMemory>(vkFreeMemory, device,
-				    vertexBufferMemory, nullptr);
-
-    safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, indexBuffer, nullptr);
-    safe_destroy_vk<VkDeviceMemory>(vkFreeMemory, device, indexBufferMemory,
-				    nullptr);
-  }
-
-  bool operator==(const Mesh & that) const {
-    return path == that.path;
-  }
-
-  friend std::ostream & operator<<(std::ostream & output,
-				   const Mesh & mesh) {
-    output << "Mesh: " << mesh.path;
-
-    return output;
-  }
-
-  void setData(const std::vector<Vertex> & newVertices,
-	       const std::vector<uint32_t> & newIndices) {
-    vertices = newVertices;
-    indices = newIndices;
-  }
-
-  VkBuffer vertexBuffer;
-  VkDeviceMemory vertexBufferMemory;
-
-  VkBuffer indexBuffer;
-  VkDeviceMemory indexBufferMemory;
-
-  std::vector<Vertex> vertices;
-  std::vector<uint32_t> indices;
-
-  std::string path;
-
-  VkDescriptorSet descriptorSet;
-
-  std::string texturePath;
-
-private:
-  VkDevice device;
 };
 
 #include <random>
