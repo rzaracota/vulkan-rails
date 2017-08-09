@@ -35,8 +35,8 @@ struct Pixy : public Mesh {
     Vertex bottomLeft, bottomRight;
 
     topLeft.pos.x = -1.0;
-    topLeft.pos.z = 0.0;
-    topLeft.pos.y = 1.0;
+    topLeft.pos.z = 1.0;
+    topLeft.pos.y = 0.0;
 
     topLeft.texCoord.x = 0.0;
     topLeft.texCoord.y = 0.0;
@@ -44,8 +44,8 @@ struct Pixy : public Mesh {
     vertices.push_back(topLeft);
 
     topRight.pos.x = 1.0;
-    topRight.pos.z = 0.0;
-    topRight.pos.y = 1.0;
+    topRight.pos.z = 1.0;
+    topRight.pos.y = 0.0;
 
     topRight.texCoord.x = 1.0;
     topRight.texCoord.y = 0.0;
@@ -53,8 +53,8 @@ struct Pixy : public Mesh {
     vertices.push_back(topRight);
 
     bottomLeft.pos.x = -1.0;
-    bottomLeft.pos.z = 0.0;
-    bottomLeft.pos.y = -1.0;
+    bottomLeft.pos.z = -1.0;
+    bottomLeft.pos.y = 0.0;
 
     bottomLeft.texCoord.x = 0.0;
     bottomLeft.texCoord.y = 1.0;
@@ -62,8 +62,8 @@ struct Pixy : public Mesh {
     vertices.push_back(bottomLeft);
 
     bottomRight.pos.x = 1.0;
-    bottomRight.pos.z = 0.0;
-    bottomRight.pos.y = -1.0;
+    bottomRight.pos.z = -1.0;
+    bottomRight.pos.y = 0.0;
 
     bottomRight.texCoord.x = 1.0;
     bottomRight.texCoord.y = 1.0;
@@ -78,12 +78,12 @@ struct Pixy : public Mesh {
     bl = 2;
     br = 3;
 
-    indices.push_back(tl);
+    indices.push_back(br);
     indices.push_back(bl);
-    indices.push_back(br);
-
-    indices.push_back(br);
-    indices.push_back(tr);
     indices.push_back(tl);
+
+    indices.push_back(tl);
+    indices.push_back(tr);
+    indices.push_back(br);
   }
 };
