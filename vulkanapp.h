@@ -26,7 +26,10 @@
 
 #include <chrono>
 
+#include "vulkanutil.h"
+
 #include "vulkanvertex.h"
+#include "vulkantexture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -44,67 +47,6 @@ const std::string CUBE_PATH = "chalet/cube.obj";
 const std::string TEXTURE_PATH = "chalet/cube.png";
 
 const std::string patchIdentifier = "terrainPatch";
-
-template <typename handleType>
-static inline bool safe_destroy_vk(void (*func)(VkDevice, handleType,
-						const VkAllocationCallbacks *),
-				   VkDevice dev, handleType obj,
-				   VkAllocationCallbacks * param) {
-  if (func == nullptr) {
-    throw std::runtime_error("invalid destroy func");
-  } else if (obj == VK_NULL_HANDLE) {
-    std::cerr << "safe_destroy: invalid null handle" << std::endl;
-  } else {
-    func(dev, obj, param);
-  }
-}
-
-struct Texture {
-  Texture(VkDevice dev, std::string filename) : path(filename),
-							device(dev) {
-  }
-
-  ~Texture() {
-    std::cout << "Destroying texture: " << path << std::endl;
-
-    // if (sampler != VK_NULL_HANDLE) {
-    //   vkDestroySampler(device, sampler, nullptr);
-    // }
-
-    safe_destroy_vk<VkSampler>(vkDestroySampler, device, sampler, nullptr);
-
-    if (imageView != VK_NULL_HANDLE) {
-      vkDestroyImageView(device, imageView, nullptr);
-    }
-
-    if (image != VK_NULL_HANDLE) {
-      vkDestroyImage(device, image, nullptr);
-    }
-
-    if (imageMemory != VK_NULL_HANDLE) {
-      vkFreeMemory(device, imageMemory, nullptr);
-    }
-  }
-
-  uint32_t width, height;
-
-  VkImage image;
-  VkImageView imageView;
-  VkSampler sampler;
-  VkDeviceMemory imageMemory;
-
-  bool operator==(const Texture & that) const {
-    std::cout << "operator==" << std::endl;
-
-    return path == that.path;
-  }
-
-protected:
-  std::string path;
-
-private:
-  VkDevice device;
-};
 
 struct UniformBufferObject {
   glm::mat4 model;
