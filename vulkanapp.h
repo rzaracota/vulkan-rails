@@ -40,6 +40,8 @@ const std::string TEXTURE_PATH = "chalet/cube.png";
 
 #include "vulkanmesh.h"
 
+#include "pixy.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "stb/stb_image.h"
