@@ -4,22 +4,13 @@
  **/
 #pragma once
 
-struct Pixy {
+struct Pixy : public Mesh {
   Pixy(VkDevice dev, std::string filename,
-       std::string texPath = TEXTURE_PATH) : device(dev), path(filename),
-					     texturePath(texPath) {
+       std::string texPath = TEXTURE_PATH) : Mesh(dev, filename) {
+    generate();
   }
 
   ~Pixy() {
-    std::cout << "Mesh dtor: " << path << std::endl;
-
-    safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, vertexBuffer, nullptr);
-    safe_destroy_vk<VkDeviceMemory>(vkFreeMemory, device,
-				    vertexBufferMemory, nullptr);
-
-    safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, indexBuffer, nullptr);
-    safe_destroy_vk<VkDeviceMemory>(vkFreeMemory, device, indexBufferMemory,
-				    nullptr);
   }
 
   bool operator==(const Mesh & that) const {
@@ -43,22 +34,49 @@ struct Pixy {
     Vertex topLeft, topRight;
     Vertex bottomLeft, bottomRight;
 
-    topLeft.pos.x = 0.0;
+    topLeft.pos.x = -1.0;
     topLeft.pos.z = 0.0;
-    topLeft.pos.y = 0.0;
+    topLeft.pos.y = 1.0;
 
-    topLeft.texCoord.x = 1.0;
-    topLeft.texCoord.y = 1.0;
+    topLeft.texCoord.x = 0.0;
+    topLeft.texCoord.y = 0.0;
 
     vertices.push_back(topLeft);
+
+    topRight.pos.x = 1.0;
+    topRight.pos.z = 0.0;
+    topRight.pos.y = 1.0;
+
+    topRight.texCoord.x = 1.0;
+    topRight.texCoord.y = 0.0;
+
+    vertices.push_back(topRight);
+
+    bottomLeft.pos.x = -1.0;
+    bottomLeft.pos.z = 0.0;
+    bottomLeft.pos.y = -1.0;
+
+    bottomLeft.texCoord.x = 0.0;
+    bottomLeft.texCoord.y = 1.0;
+
+    vertices.push_back(bottomLeft);
+
+    bottomRight.pos.x = 1.0;
+    bottomRight.pos.z = 0.0;
+    bottomRight.pos.y = -1.0;
+
+    bottomRight.texCoord.x = 1.0;
+    bottomRight.texCoord.y = 1.0;
+
+    vertices.push_back(bottomRight);
 
     int tl, tr, bl, br;
 
     tl = 0;
-    tr = tl + 1;
+    tr = 1;
 
-    bl = tr + 1;
-    br = bl + 1;
+    bl = 2;
+    br = 3;
 
     indices.push_back(tl);
     indices.push_back(bl);
@@ -68,22 +86,4 @@ struct Pixy {
     indices.push_back(tr);
     indices.push_back(tl);
   }
-
-  VkBuffer vertexBuffer;
-  VkDeviceMemory vertexBufferMemory;
-
-  VkBuffer indexBuffer;
-  VkDeviceMemory indexBufferMemory;
-
-  std::vector<Vertex> vertices;
-  std::vector<uint32_t> indices;
-
-  std::string path;
-
-  VkDescriptorSet descriptorSet;
-
-  std::string texturePath;
-
-private:
-  VkDevice device;
 };

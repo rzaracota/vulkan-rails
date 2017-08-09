@@ -6,7 +6,7 @@ struct Mesh {
 					     texturePath(texPath) {
   }
 
-  ~Mesh() {
+  virtual ~Mesh() {
     std::cout << "Mesh dtor: " << path << std::endl;
 
     safe_destroy_vk<VkBuffer>(vkDestroyBuffer, device, vertexBuffer, nullptr);

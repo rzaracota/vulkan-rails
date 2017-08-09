@@ -1804,6 +1804,15 @@ private:
     // createDescriptorSets
   }
 
+  void createPixy() {
+    auto pixy = std::make_shared<Pixy>(device, "pixy1");
+
+    meshes.insert({ "pixy1", pixy });
+
+    createVertexBuffer("pixy1");
+    createIndexBuffer("pixy1");
+  }
+
   void createTerrain() {
     TerrainPatch patch;
 
@@ -1834,9 +1843,9 @@ private:
 
     loadTexture(*mesh, "chalet/cube.png");
 
-    mesh = getMesh(patchIdentifier);
+    mesh = getMesh("pixy1");
 
-    loadTexture(*mesh, "textures/grass.png");
+    loadTexture(*mesh, "textures/pixy.png");
 
     std::for_each(meshes.cbegin(), meshes.cend(), [&] (auto item) {
 	createDescriptorSet(*item.second);
@@ -1859,7 +1868,8 @@ private:
     createFramebuffers();
     loadMesh(CUBE_PATH);
     loadMesh(MODEL_PATH);
-    createTerrain();
+    //createTerrain();
+    createPixy();
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSets();
