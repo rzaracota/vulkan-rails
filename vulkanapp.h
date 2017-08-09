@@ -1952,7 +1952,7 @@ private:
     ubo.model = glm::rotate(glm::mat4(), time * glm::radians(10.0f),
 			    glm::vec3(0.0f, 0.0f, 1.0f));
 
-    ubo.model *= glm::scale(glm::mat4(), glm::vec3(8.0f, 8.0f, 8.0f));
+    ubo.model *= glm::scale(glm::mat4(), glm::vec3(16.0f, 16.0f, 16.0f));
 
     ubo.view = glm::lookAt(glm::vec3(0.0f, 2.0f, 0.0f),
 			   glm::vec3(0.0f, 0.0f, 0.0f),
@@ -1979,7 +1979,8 @@ private:
 
     memcpy(data + 1, &ubo, sizeof (ubo));
 
-    ubo.model = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
+    ubo.model = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0))
+                * glm::scale(glm::mat4(), glm::vec3(0.5, 1.0, 1.0));
 
     // terrain
     memcpy(data + 2, &ubo, sizeof (ubo));
