@@ -78,12 +78,12 @@ struct Pixy : public Mesh {
     bl = 2;
     br = 3;
 
-    indices.push_back(br);
     indices.push_back(bl);
+    indices.push_back(br);
     indices.push_back(tl);
 
     indices.push_back(tl);
-    indices.push_back(tr);
     indices.push_back(br);
+    indices.push_back(tr);
   }
 };
