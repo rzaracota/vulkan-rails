@@ -12,19 +12,23 @@
 class Keyboard {
 public:
   Keyboard() {
-
+    reinitialize();
   }
 
   ~Keyboard() {
 
   }
 
-  void reinitialize() {
-    for (auto iter = keys.begin(); iter != keys.cend(); iter++) {
-      iter->second = false;
-    }
+  bool getKeyState(KeyConstant key) const {
+    return keys.at(key);
   }
 
 private:
+  void reinitialize() {
+    for (int i = 0; i < KC_KEY_CONSTANTS_END; i++) {
+      keys[i] = false;
+    }
+  }
+
   std::unordered_map<int, bool> keys;
 };
