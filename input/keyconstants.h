@@ -13,5 +13,6 @@ typedef enum _KeyConstant {
   KC_A,
   KC_D,
   KC_S,
-  KC_W
+  KC_W,
+  KC_KEY_CONSTANTS_END
 } KeyConstant;

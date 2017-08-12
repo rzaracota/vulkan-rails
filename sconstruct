@@ -10,4 +10,8 @@ env = Environment(ENV = os.environ)
 
 test = env.Command('test', None, "./driver")
 
+test_input = env.Command('test_input', None,
+        "LD_LIBRARY_PATH=./input ./input/inputtest")
+
 Depends(test, 'driver')
+Depends(test_input, 'input/inputtest')
