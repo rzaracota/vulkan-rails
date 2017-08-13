@@ -59,7 +59,7 @@ struct evdevice {
   void displayDetailed(std::ostream & output = std::cout) {
     using std::endl;
 
-    output << "EvDev version: " << evdevVersion << endl;
+    output << "EvDev version: " << std::hex << evdevVersion << endl;
     output << "Name: " << name << endl;
     output << "Location: " << location << endl;
     output << "UniqueID: " << uniqueID << endl;
@@ -69,7 +69,7 @@ struct evdevice {
 
   const std::string deviceFilename;
 
-  std::string evdevVersion;
+  int evdevVersion;
   std::string name;
   std::string location;
   std::string uniqueID;
