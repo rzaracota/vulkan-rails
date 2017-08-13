@@ -12,6 +12,8 @@ static void keyboardTest(InputManager & manager) {
       throw std::runtime_error("Keyboard is not initialized.");
     }
   }
+
+  manager.handleEvents();
 }
 
 int main(int argc, char * argv[]) {

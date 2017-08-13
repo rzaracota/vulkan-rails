@@ -40,7 +40,7 @@ void EVInputManager::get_keyboards() {
         if (dev.getClass() == DC_Keyboard) {
           EVKeyboard kb(dev);
 
-          add_keyboard(kb);
+          add_keyboard(std::make_shared<EVKeyboard>(kb));
         }
       } catch (std::exception & e) {
         std::cerr << e.what() << std::endl;

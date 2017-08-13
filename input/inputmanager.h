@@ -6,6 +6,8 @@
 #include <exception>
 #include <vector>
 
+#include <memory>
+
 #include "keyboard.h"
 
 /**
@@ -32,20 +34,22 @@ class InputManager {
 
    void Init();
 
+   void handleEvents();
+
    bool getKeyboardKeyState(KeyConstant key) const;
-   
+
    static std::string DeviceClassNames(DeviceClass & cl) {
       return device_class_names[cl];
    }
 
  protected:
-   void add_keyboard(const Keyboard & keyboard);
+   void add_keyboard(const std::shared_ptr<Keyboard> keyboard);
 
   private:
     virtual void get_keyboards();
     virtual void get_mice();
 
-    std::vector<Keyboard> keyboards;
+    std::vector<std::shared_ptr<Keyboard>> keyboards;
 
     // consider making a singleton
  };
