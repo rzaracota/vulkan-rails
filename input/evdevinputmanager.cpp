@@ -17,6 +17,10 @@ struct evdevice {
     if (fd < 0) {
       throw std::runtime_error("Failed to open device: " + filename);
     }
+
+    if (libevdev_new_from_fd(fd, &dev) < 0) {
+      throw std::runtime_error("Failed to open device: " + filename);
+    }
   }
 
   ~evdevice() {
