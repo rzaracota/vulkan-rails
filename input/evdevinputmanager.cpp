@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <sys/types.h>
+#include <dirent.h>
 
 #include <linux/input.h>
 #include <libevdev-1.0/libevdev/libevdev.h>
@@ -37,27 +38,36 @@ struct evdevice {
       using std::endl;
 
       if (device.dev == nullptr) {
-        output << "Device not loaded.";
+        output << device.deviceFilename << ": Device not loaded.";
 
         return output;
       }
 
-      output << "ID: bus " << libevdev_get_id_bustype(device.dev) << " vendor "
-           << libevdev_get_id_vendor(device.dev) << " product "
-           << libevdev_get_id_product(device.dev);
+      output << device.deviceFilename << ": " << device.name;
 
       return output;
   }
 
   void get_information() {
     evdevVersion = libevdev_get_driver_version(dev);
-    name = libevdev_get_name(dev);
-    location = libevdev_get_phys(dev);
-    uniqueID = libevdev_get_uniq(dev);
+    name = std::string(libevdev_get_name(dev));
+
+    const char * phys = libevdev_get_phys(dev);
+
+    location = (phys != nullptr) ? phys : "";
+
+    const char * uniq = libevdev_get_uniq(dev);
+
+    uniqueID = (uniq != nullptr) ? uniq : "";
   }
 
   void displayDetailed(std::ostream & output = std::cout) {
     using std::endl;
+
+    output << deviceFilename << ": bus " << libevdev_get_id_bustype(dev)
+               << " vendor "
+               << libevdev_get_id_vendor(dev) << " product "
+               << libevdev_get_id_product(dev);
 
     output << "EvDev version: " << std::hex << evdevVersion << endl;
     output << "Name: " << name << endl;
@@ -85,13 +95,32 @@ EVInputManager::~EVInputManager() {
 void EVInputManager::get_keyboards() {
   EVKeyboard kb;
 
-  evdevice dev("/dev/input/event2");
-
-  std::cout << dev << std::endl;
-
-  dev.displayDetailed();
-
   add_keyboard(kb);
+
+  DIR * dirp = nullptr;
+
+  dirp = opendir(deviceDirectory.c_str());
+
+  if (dirp == nullptr) {
+    throw std::runtime_error("Failed to open device directory: "
+                              + deviceDirectory);
+  }
+
+  auto dent = readdir(dirp);
+
+  while (dent != nullptr) {
+    if (dent->d_type != DT_DIR) {
+      try {
+        evdevice dev(deviceDirectory + "/" + std::string(dent->d_name));
+
+        std::cout << dev << std::endl;
+      } catch (std::exception & e) {
+        std::cerr << e.what() << std::endl;
+      }
+    }
+
+    dent = readdir(dirp);
+  }
 }
 
 void EVInputManager::get_mice() {

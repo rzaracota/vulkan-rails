@@ -10,4 +10,6 @@ public:
 private:
     void get_keyboards() override;
     void get_mice() override;
+
+    const std::string deviceDirectory = "/dev/input";
 };
