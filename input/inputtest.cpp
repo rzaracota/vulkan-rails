@@ -2,6 +2,8 @@
 
 #include "inputmanager.h"
 
+#include "evdevinputmanager.h"
+
 #include <exception>
 
 static void keyboardTest(InputManager & manager) {
@@ -15,5 +17,13 @@ static void keyboardTest(InputManager & manager) {
 int main(int argc, char * argv[]) {
   InputManager inputManager;
 
+  inputManager.Init();
+
   keyboardTest(inputManager);
+
+  EVInputManager evManager;
+
+  evManager.Init();
+
+  keyboardTest(evManager);
 }

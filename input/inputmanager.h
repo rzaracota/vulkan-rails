@@ -13,6 +13,8 @@ class InputManager {
    InputManager();
    virtual ~InputManager();
 
+   void Init();
+
    bool getKeyboardKeyState(KeyConstant key) const;
 
  protected:

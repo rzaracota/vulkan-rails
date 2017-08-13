@@ -1,11 +1,16 @@
+#include <iostream>
+
 #include "inputmanager.h"
 
 InputManager::InputManager() {
-  get_keyboards();
 }
 
 InputManager::~InputManager() {
+}
 
+void InputManager::Init() {
+  get_keyboards();
+  get_mice();
 }
 
 bool InputManager::getKeyboardKeyState(KeyConstant key) const {
@@ -18,12 +23,14 @@ bool InputManager::getKeyboardKeyState(KeyConstant key) const {
 
 void InputManager::add_keyboard(const Keyboard & newKeyboard) {
   keyboards.push_back(newKeyboard);
+
+  std::cout << "keyboard count: " << keyboards.size() << std::endl;
 }
 
 void InputManager::get_keyboards() {
   Keyboard fakeKeyboard;
 
-  keyboards.push_back(fakeKeyboard);
+  add_keyboard(fakeKeyboard);
 }
 
 void InputManager::get_mice() {

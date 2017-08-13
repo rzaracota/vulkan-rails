@@ -6,9 +6,9 @@
 
 #include "keyboard.h"
 
-class EVKeyboard : private Keyboard {
+class EVKeyboard : public Keyboard {
 public:
-  EVKeyboard() {
+  EVKeyboard() : Keyboard() {
 
   }
 

@@ -8,6 +8,6 @@ public:
   ~EVInputManager();
 
 private:
-    void get_keyboards();
-    void get_mice();
+    void get_keyboards() override;
+    void get_mice() override;
 };
