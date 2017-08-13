@@ -16,6 +16,10 @@ bool InputManager::getKeyboardKeyState(KeyConstant key) const {
   return keyboards[0].getKeyState(key);
 }
 
+void InputManager::add_keyboard(const Keyboard & newKeyboard) {
+  keyboards.push_back(newKeyboard);
+}
+
 void InputManager::get_keyboards() {
   Keyboard fakeKeyboard;
 

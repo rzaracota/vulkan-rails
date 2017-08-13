@@ -11,12 +11,16 @@
 class InputManager {
   public:
    InputManager();
-   ~InputManager();
+   virtual ~InputManager();
 
    bool getKeyboardKeyState(KeyConstant key) const;
+
+ protected:
+   void add_keyboard(const Keyboard & keyboard);
+
   private:
-    void get_keyboards();
-    void get_mice();
+    virtual void get_keyboards();
+    virtual void get_mice();
 
     std::vector<Keyboard> keyboards;
 

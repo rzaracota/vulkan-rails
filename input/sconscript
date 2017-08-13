@@ -1,5 +1,5 @@
 # build the input library
 
-SharedLibrary('inputmanager', 'inputmanager.cpp')
+SharedLibrary('inputmanager', ['inputmanager.cpp', 'evdevinputmanager.cpp'])
 Program('inputtest', 'inputtest.cpp', LIBS=['evdev', 'inputmanager'],
                                       LIBPATH='.')
