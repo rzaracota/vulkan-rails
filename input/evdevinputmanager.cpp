@@ -38,11 +38,9 @@ void EVInputManager::get_keyboards() {
         evdevice dev(deviceDirectory + "/" + std::string(dent->d_name));
 
         if (dev.getClass() == DC_Keyboard) {
-          EVKeyboard kb;
+          EVKeyboard kb(dev);
 
           add_keyboard(kb);
-
-          std::cout << dev << std::endl;
         }
       } catch (std::exception & e) {
         std::cerr << e.what() << std::endl;

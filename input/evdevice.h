@@ -61,7 +61,6 @@ struct evdevice {
     if (libevdev_has_event_type(dev, 2)
         && libevdev_has_event_code(dev, EV_REL, REL_X)
         && libevdev_has_event_code(dev, EV_REL, REL_Y)) {
-          std::cout << "Have presumed keyboard keys" << std::endl;
           result = true;
     }
 

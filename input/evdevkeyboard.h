@@ -4,11 +4,15 @@
 
 #pragma once
 
+#include "inputmanager.h"
+
 #include "keyboard.h"
+
+#include "evdevice.h"
 
 class EVKeyboard : public Keyboard {
 public:
-  EVKeyboard() : Keyboard() {
+  EVKeyboard(const evdevice & dev) : device(dev) {
 
   }
 
@@ -16,4 +20,5 @@ public:
 
   }
 private:
+  const evdevice & device;
 };
