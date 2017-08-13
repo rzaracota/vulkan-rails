@@ -21,6 +21,8 @@ struct evdevice {
     if (libevdev_new_from_fd(fd, &dev) < 0) {
       throw std::runtime_error("Failed to open device: " + filename);
     }
+
+    get_information();
   }
 
   ~evdevice() {
@@ -45,11 +47,32 @@ struct evdevice {
            << libevdev_get_id_product(device.dev);
 
       return output;
-    }
+  }
+
+  void get_information() {
+    evdevVersion = libevdev_get_driver_version(dev);
+    name = libevdev_get_name(dev);
+    location = libevdev_get_phys(dev);
+    uniqueID = libevdev_get_uniq(dev);
+  }
+
+  void displayDetailed(std::ostream & output = std::cout) {
+    using std::endl;
+
+    output << "EvDev version: " << evdevVersion << endl;
+    output << "Name: " << name << endl;
+    output << "Location: " << location << endl;
+    output << "UniqueID: " << uniqueID << endl;
+  }
 
   struct libevdev * dev = nullptr;
 
   const std::string deviceFilename;
+
+  std::string evdevVersion;
+  std::string name;
+  std::string location;
+  std::string uniqueID;
 };
 
 EVInputManager::EVInputManager() {
@@ -62,9 +85,11 @@ EVInputManager::~EVInputManager() {
 void EVInputManager::get_keyboards() {
   EVKeyboard kb;
 
-  evdevice dev("/dev/input/event0");
+  evdevice dev("/dev/input/event2");
 
   std::cout << dev << std::endl;
+
+  dev.displayDetailed();
 
   add_keyboard(kb);
 }
