@@ -30,9 +30,17 @@ struct evdevice {
       using std::cout;
       using std::endl;
 
-      cout << "ID: bus " << libevdev_get_id_bustype(device.dev) << " vendor "
+      if (device.dev == nullptr) {
+        output << "Device not loaded.";
+
+        return output;
+      }
+
+      output << "ID: bus " << libevdev_get_id_bustype(device.dev) << " vendor "
            << libevdev_get_id_vendor(device.dev) << " product "
-           << libevdev_get_id_product(device.dev) << endl;
+           << libevdev_get_id_product(device.dev);
+
+      return output;
     }
 
   struct libevdev * dev = nullptr;
@@ -49,6 +57,10 @@ EVInputManager::~EVInputManager() {
 
 void EVInputManager::get_keyboards() {
   EVKeyboard kb;
+
+  evdevice dev("/dev/input/event0");
+
+  std::cout << dev << std::endl;
 
   add_keyboard(kb);
 }
