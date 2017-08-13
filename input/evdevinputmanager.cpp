@@ -12,7 +12,8 @@
 #include "evdevinputmanager.h"
 
 struct evdevice {
-  evdevice(std::string filename) : deviceFilename(filename) {
+  evdevice(std::string filename) : deviceFilename(filename),
+                                   deviceClass(DC_Unknown) {
     int fd = open(filename.c_str(), O_RDONLY);
 
     if (fd < 0) {
@@ -24,6 +25,8 @@ struct evdevice {
     }
 
     get_information();
+
+    determineClass();
   }
 
   ~evdevice() {
@@ -43,7 +46,8 @@ struct evdevice {
         return output;
       }
 
-      output << device.deviceFilename << ": " << device.name;
+      output << device.deviceFilename << ": " << device.name
+             << " : " << InputManager::DeviceClassNames(device.deviceClass);
 
       return output;
   }
@@ -59,6 +63,47 @@ struct evdevice {
     const char * uniq = libevdev_get_uniq(dev);
 
     uniqueID = (uniq != nullptr) ? uniq : "";
+  }
+
+  bool checkMouse() const {
+    bool result = false;
+
+    // has motion events
+    if (libevdev_has_event_type(dev, 2)
+        && libevdev_has_event_code(dev, EV_REL, REL_X)
+        && libevdev_has_event_code(dev, EV_REL, REL_Y)) {
+          std::cout << "Have presumed keyboard keys" << std::endl;
+          result = true;
+    }
+
+    return result;
+  }
+
+  bool checkKeyboard() const {
+    bool result = false;
+
+    // has key events
+    if (libevdev_has_event_type(dev, 1)
+        && libevdev_has_event_code(dev, EV_KEY, KEY_ESC)
+        && libevdev_has_event_code(dev, EV_KEY, KEY_SPACE)) {
+          std::cout << "Have presumed keyboard keys" << std::endl;
+          result = true;
+    }
+
+    return result;
+  }
+
+  void determineClass() {
+    bool maybeMouse = checkMouse();
+    bool maybeKeyboard = checkKeyboard();
+
+    if (maybeMouse && !maybeKeyboard) {
+      deviceClass = DC_Mouse;
+    } else if (maybeKeyboard && !maybeMouse) {
+      deviceClass = DC_Keyboard;
+    } else {
+      deviceClass = DC_Unknown;
+    }
   }
 
   void displayDetailed(std::ostream & output = std::cout) {
@@ -83,6 +128,9 @@ struct evdevice {
   std::string name;
   std::string location;
   std::string uniqueID;
+
+private:
+  DeviceClass deviceClass;
 };
 
 EVInputManager::EVInputManager() {
