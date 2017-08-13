@@ -13,16 +13,16 @@ static void keyboardTest(InputManager & manager) {
     }
   }
 
-  manager.handleEvents();
+  int done = false;
+
+  while (done == false) {
+    manager.handleEvents();
+
+    done = manager.getKeyboardKeyState(KC_Escape);
+  }
 }
 
 int main(int argc, char * argv[]) {
-  InputManager inputManager;
-
-  inputManager.Init();
-
-  keyboardTest(inputManager);
-
   EVInputManager evManager;
 
   evManager.Init();

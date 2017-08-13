@@ -20,12 +20,12 @@ struct evdevice {
 
   ~evdevice() {
     if (dev != nullptr) {
-      libevdev_free(dev);
+      //libevdev_free(dev);
     }
   }
 
   friend std::ostream & operator<<(std::ostream & output,
-    struct evdevice & device) {
+    const struct evdevice & device) {
       using std::cout;
       using std::endl;
 

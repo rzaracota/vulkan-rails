@@ -38,7 +38,7 @@ class InputManager {
 
    bool getKeyboardKeyState(KeyConstant key) const;
 
-   static std::string DeviceClassNames(DeviceClass & cl) {
+   static std::string DeviceClassNames(const DeviceClass & cl) {
       return device_class_names[cl];
    }
 

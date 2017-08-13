@@ -17,10 +17,6 @@ public:
 
   }
 
-  EVKeyboard(const EVKeyboard & that) : device(that.device) {
-    std::cout << "EVKeyboard copy ctor" << std::endl;
-  }
-
   ~EVKeyboard() {
 
   }
@@ -30,19 +26,25 @@ public:
   }
 
   void handleEvents() override {
-    std::cout << "Handle evdevkeyboard events" << std::endl;
+    std::cout << "EVKeyboard->handleEvents: " << device.name << std::endl;
 
     struct input_event event;
+
+    if (device.dev == nullptr) {
+      std::cout << "Uninitialized device." << std::endl;
+
+      return;
+    }
 
     int rc = libevdev_next_event(device.dev, LIBEVDEV_READ_FLAG_NORMAL, &event);
 
     if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
       print_event(event);
     } else {
-      std::cout << "No new events" << std::endl;
+      std::cout << "rc: " << rc << std::endl;
     }
   }
 
 private:
-  const evdevice & device;
+  const evdevice device;
 };

@@ -17,18 +17,11 @@ public:
     reinitialize();
   }
 
-  Keyboard(const Keyboard & that) {
-    std::cout << "Keyboard copy ctor" << std::endl;
-
-    reinitialize();
-  }
-
   ~Keyboard() {
 
   }
 
   virtual void handleEvents() {
-    std::cout << "Keyboard handle events" << std::endl;
   }
 
   bool getKeyState(KeyConstant key) const {
