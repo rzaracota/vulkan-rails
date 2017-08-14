@@ -48,9 +48,9 @@ public:
         | LIBEVDEV_READ_FLAG_BLOCKING, &event);
 
     if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
-      print_event(event);
-
       if (event.type == EV_KEY) {
+        print_event(event);
+        
         auto iter = evKC.find(event.code);
 
         if (iter != evKC.end()) {
