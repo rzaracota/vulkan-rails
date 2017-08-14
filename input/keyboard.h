@@ -36,12 +36,13 @@ public:
     keys[key] = !keys.at(key);
   }
 
-private:
   void reinitialize() {
     for (int i = 0; i < KC_KEY_CONSTANTS_END; i++) {
       keys[i] = false;
     }
   }
+
+private:
 
   std::unordered_map<int, bool> keys;
 };

@@ -7,6 +7,8 @@
 
 #include <thread>
 
+#include <poll.h>
+
 #include "inputmanager.h"
 
 #include "keyboard.h"
@@ -49,13 +51,19 @@ public:
       return;
     }
 
-    int rc = libevdev_next_event(device.dev, LIBEVDEV_READ_FLAG_NORMAL
+    struct pollfd pfd = { device.fd, POLLIN };
+
+    int rc = poll(&pfd, 1, 0);
+
+    if (rc <= 0) {
+      return;
+    }
+
+    rc = libevdev_next_event(device.dev, LIBEVDEV_READ_FLAG_NORMAL
         | LIBEVDEV_READ_FLAG_BLOCKING, &event);
 
     if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
       if (event.type == EV_KEY) {
-        print_event(event);
-
         auto iter = evKC.find(event.code);
 
         if (iter != evKC.end()) {

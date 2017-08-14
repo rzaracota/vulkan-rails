@@ -32,6 +32,8 @@ void InputManager::handleEvents() {
   // });
 
   // only test with first keyboard
+  keyboards[0]->reinitialize();
+
   keyboards[0]->handleEvents();
 }
 

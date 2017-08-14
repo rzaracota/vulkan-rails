@@ -17,6 +17,8 @@
 
 #include <unordered_map>
 
+#include <chrono>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
@@ -2007,8 +2009,8 @@ private:
 
     auto velocity = getVelocity();
 
-    std::cout << "velocity: " << velocity.x << ", "
-              << velocity.y << ", " << velocity.z << std::endl;
+    // std::cout << "velocity: " << velocity.x << ", "
+    //           << velocity.y << ", " << velocity.z << std::endl;
 
     static glm::vec3 position(0.0f, 0.0f, 0.0f);
 
@@ -2026,11 +2028,26 @@ private:
   void mainLoop() {
     while (!glfwWindowShouldClose(window)
             && !inputManager.getKeyboardKeyState(KC_Escape)) {
+      // timer start
+      auto startTime = std::chrono::high_resolution_clock::now();
+
       glfwPollEvents();
 
       updateUniformBuffer();
 
       drawFrame();
+
+      // timer end
+      auto endTime = std::chrono::high_resolution_clock::now();
+
+      auto frameTime = endTime - startTime;
+
+      using std::chrono::duration;
+
+      auto framerate = 1000.0 / duration<double, std::milli>(frameTime).count();
+
+      std::cout << "Framerate: "
+        << framerate << std::endl;
     }
 
     vkDeviceWaitIdle(device);
