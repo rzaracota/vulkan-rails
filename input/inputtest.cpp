@@ -16,8 +16,6 @@ static void keyboardTest(InputManager & manager) {
   int done = false;
 
   while (done == false) {
-    manager.handleEvents();
-
     done = manager.getKeyboardKeyState(KC_Escape);
   }
 }

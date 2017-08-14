@@ -3,7 +3,7 @@
 struct evdevice {
   evdevice(std::string filename) : deviceFilename(filename),
                                    deviceClass(DC_Unknown) {
-    int fd = open(filename.c_str(), O_RDONLY);
+    fd = open(filename.c_str(), O_RDONLY);
 
     if (fd < 0) {
       throw std::runtime_error("Failed to open device: " + filename);
@@ -119,6 +119,8 @@ struct evdevice {
   DeviceClass getClass() const {
     return deviceClass;
   }
+
+  int fd;
 
 private:
   DeviceClass deviceClass;

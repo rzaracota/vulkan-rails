@@ -8,6 +8,8 @@
 
 #include <memory>
 
+#include <thread>
+
 #include "keyboard.h"
 
 /**
@@ -48,6 +50,8 @@ class InputManager {
   private:
     virtual void get_keyboards();
     virtual void get_mice();
+
+    std::shared_ptr<std::thread> watcher;
 
     std::vector<std::shared_ptr<Keyboard>> keyboards;
 

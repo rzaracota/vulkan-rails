@@ -3,6 +3,8 @@
  **/
 #pragma once
 
+#include <unordered_map>
+
 #include <thread>
 
 #include "inputmanager.h"
@@ -13,21 +15,27 @@
 
 class EVKeyboard : public Keyboard {
 public:
-  EVKeyboard(const evdevice & dev) : device(dev) {
-
+  EVKeyboard(const evdevice & dev) : Keyboard(), device(dev) {
+    setupMapping();
   }
 
   ~EVKeyboard() {
 
   }
 
+  void setupMapping() {
+    evKC.insert({KEY_ESC, KC_Escape});
+  }
+
   static void print_event(const struct input_event & event) {
-    std::cout << "Event: " << event.type << std::endl;
+    std::cout << "Event: " << event.type << " "
+              << libevdev_event_type_get_name(event.type)
+              << " code: " << event.code << " "
+              << libevdev_event_code_get_name(event.type, event.code)
+              << std::endl;
   }
 
   void handleEvents() override {
-    std::cout << "EVKeyboard->handleEvents: " << device.name << std::endl;
-
     struct input_event event;
 
     if (device.dev == nullptr) {
@@ -40,11 +48,19 @@ public:
 
     if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
       print_event(event);
-    } else {
-      std::cout << "rc: " << rc << std::endl;
+
+      if (event.type == EV_KEY) {
+        auto iter = evKC.find(event.code);
+
+        if (iter != evKC.end()) {
+          toggleKey(iter->second);
+        }
+      }
     }
   }
 
 private:
   const evdevice device;
+
+  std::unordered_map<int,KeyConstant> evKC;
 };

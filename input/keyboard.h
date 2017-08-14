@@ -25,7 +25,15 @@ public:
   }
 
   bool getKeyState(KeyConstant key) const {
+    if (key < 0 || key > KC_KEY_CONSTANTS_END) {
+      throw std::runtime_error("Invalid key specified: " + key);
+    }
+
     return keys.at(key);
+  }
+
+  void toggleKey(KeyConstant key) {
+    keys[key] = !keys.at(key);
   }
 
 private:
