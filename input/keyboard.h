@@ -43,6 +43,5 @@ public:
   }
 
 private:
-
   std::unordered_map<int, bool> keys;
 };

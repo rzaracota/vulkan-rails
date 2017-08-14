@@ -1949,7 +1949,7 @@ private:
   }
 
   glm::vec3 getVelocity() {
-    static const float scale = 0.001f;
+    static const float scale = 0.01f;
 
     float components[3] = { 0.0f, 0.0f, 0.0f };
 
@@ -2045,9 +2045,6 @@ private:
       using std::chrono::duration;
 
       auto framerate = 1000.0 / duration<double, std::milli>(frameTime).count();
-
-      std::cout << "Framerate: "
-        << framerate << std::endl;
     }
 
     vkDeviceWaitIdle(device);

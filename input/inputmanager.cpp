@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <memory>
 
+#include <chrono>
+
 #include <thread>
 
 #include "inputmanager.h"
@@ -32,9 +34,19 @@ void InputManager::handleEvents() {
   // });
 
   // only test with first keyboard
-  keyboards[0]->reinitialize();
 
-  keyboards[0]->handleEvents();
+  static auto startTime = std::chrono::high_resolution_clock::now();
+
+  auto currentTime = std::chrono::high_resolution_clock::now();
+
+  auto delta = currentTime - startTime;
+
+  if (std::chrono::duration<double, std::milli>(delta).count() >= 2) {
+    keyboards[0]->reinitialize();
+    keyboards[0]->handleEvents();
+
+    startTime = currentTime;
+  }
 }
 
 bool InputManager::getKeyboardKeyState(KeyConstant key) const {
