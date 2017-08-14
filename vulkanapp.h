@@ -1946,6 +1946,26 @@ private:
     vkQueueWaitIdle(presentQueue);
   }
 
+  glm::vec3 getVelocity() {
+    static const float scale = 1.0f;
+
+    float components[3] = { 0.0f, 0.0f, 0.0f };
+
+    if (inputManager.getKeyboardKeyState(KC_Left)) {
+      components[0] = -scale;
+    } else if (inputManager.getKeyboardKeyState(KC_Right)) {
+      components[0] = scale;
+    }
+
+    if (inputManager.getKeyboardKeyState(KC_Up)) {
+      components[2] = scale;
+    } else if (inputManager.getKeyboardKeyState(KC_Down)) {
+      components[2] = -scale;
+    }
+
+    return glm::vec3(components[0], components[1], components[2]);
+  }
+
   void updateUniformBuffer() {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -1985,7 +2005,12 @@ private:
 
     memcpy(data + 1, &ubo, sizeof (ubo));
 
-    ubo.model = glm::translate(glm::mat4(1.0), glm::vec3(0.1 * time, 0.0, 0.0))
+    auto velocity = getVelocity();
+
+    std::cout << "velocity: " << velocity.x << ", "
+              << velocity.y << ", " << velocity.z << std::endl;
+
+    ubo.model = glm::translate(glm::mat4(1.0), velocity)
                 * glm::scale(glm::mat4(), glm::vec3(0.5, 1.0, 1.0));
 
     // terrain

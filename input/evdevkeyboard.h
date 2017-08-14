@@ -25,6 +25,11 @@ public:
 
   void setupMapping() {
     evKC.insert({KEY_ESC, KC_Escape});
+
+    evKC.insert({KEY_LEFT, KC_Left});
+    evKC.insert({KEY_RIGHT, KC_Right});
+    evKC.insert({KEY_UP, KC_Up});
+    evKC.insert({KEY_DOWN, KC_Down});
   }
 
   static void print_event(const struct input_event & event) {
@@ -50,7 +55,7 @@ public:
     if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
       if (event.type == EV_KEY) {
         print_event(event);
-        
+
         auto iter = evKC.find(event.code);
 
         if (iter != evKC.end()) {
