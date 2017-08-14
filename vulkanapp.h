@@ -60,6 +60,8 @@ struct UniformBufferObject {
 
 #include <random>
 
+#include "input/evdevinputmanager.h"
+
 struct TerrainPatch {
 public:
   TerrainPatch(const int patchSize = 16, const double patchSpacing = 1.0) :
@@ -1877,6 +1879,10 @@ private:
     createSemaphores();
   }
 
+  void initRails() {
+    inputManager.Init();
+  }
+
   void drawFrame() {
     uint32_t imageIndex;
 
@@ -1989,7 +1995,8 @@ private:
   }
 
   void mainLoop() {
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window)
+            && !inputManager.getKeyboardKeyState(KC_Escape)) {
       glfwPollEvents();
 
       updateUniformBuffer();
@@ -2031,6 +2038,8 @@ private:
 
     glfwTerminate();
   }
+
+  EVInputManager inputManager;
 
   VkImage depthImage;
   VkDeviceMemory depthImageMemory;
@@ -2076,6 +2085,7 @@ public:
   void run() {
     initWindow();
     initVulkan();
+    initRails();
     mainLoop();
     cleanup();
   }
