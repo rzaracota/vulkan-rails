@@ -44,7 +44,8 @@ public:
       return;
     }
 
-    int rc = libevdev_next_event(device.dev, LIBEVDEV_READ_FLAG_NORMAL, &event);
+    int rc = libevdev_next_event(device.dev, LIBEVDEV_READ_FLAG_NORMAL
+        | LIBEVDEV_READ_FLAG_BLOCKING, &event);
 
     if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
       print_event(event);
