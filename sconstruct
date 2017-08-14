@@ -1,20 +1,4 @@
-#cpp_flags = -g
-#c++ = g++
-
-#ld_flags = -lglfw -lvulkan
-
-#all: driver shaders
-
-#driver: main.cpp filemap.h vulkanapp.h terrain.h
-#	$(c++) $(cpp_flags) $(ld_flags) $< -o driver
-#shaders:
-#	make -C shaders
-#test:
-###	./driver
-
-#.PHONY: shaders all test
-
-SConscript(['shaders/sconscript'])
+SConscript(['shaders/sconscript', 'input/sconscript'])
 
 Program('driver', 'main.cpp', LIBS=['glfw', 'vulkan'])
 
@@ -26,4 +10,8 @@ env = Environment(ENV = os.environ)
 
 test = env.Command('test', None, "./driver")
 
+test_input = env.Command('test_input', None,
+        "LD_LIBRARY_PATH=./input ./input/inputtest")
+
 Depends(test, 'driver')
+Depends(test_input, 'input/inputtest')

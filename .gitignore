@@ -1,4 +1,9 @@
 driver
+inputtest
 *.spv
 cxml
-
+*.o
+*.so
+.sconsign.dblite
+*.os
+*.a
