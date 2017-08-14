@@ -1839,21 +1839,13 @@ private:
   }
 
   void createDescriptorSets() {
-    auto mesh = getMesh(MODEL_PATH);
-
-    loadTexture(*mesh, "chalet/chalet.jpg");
-
-    mesh = getMesh(CUBE_PATH);
-
-    loadTexture(*mesh, "chalet/cube.png");
-
-    mesh = getMesh("pixy1");
+    auto mesh = getMesh("pixy1");
 
     loadTexture(*mesh, "textures/pixy.png");
 
     std::for_each(meshes.cbegin(), meshes.cend(), [&] (auto item) {
-	createDescriptorSet(*item.second);
-      });
+	     createDescriptorSet(*item.second);
+    });
   }
 
   void initVulkan() {
@@ -1870,9 +1862,6 @@ private:
     createCommandPool();
     createDepthResources();
     createFramebuffers();
-    loadMesh(CUBE_PATH);
-    loadMesh(MODEL_PATH);
-    //createTerrain();
     createPixy();
     createUniformBuffer();
     createDescriptorPool();
@@ -1977,11 +1966,11 @@ private:
 
     UniformBufferObject ubo = {};
 
-    ubo.model = glm::rotate(glm::mat4(), time * glm::radians(10.0f),
-			    glm::vec3(0.0f, 0.0f, 1.0f));
-
-    ubo.model *= glm::scale(glm::mat4(), glm::vec3(16.0f, 16.0f, 16.0f));
-
+    // ubo.model = glm::rotate(glm::mat4(), time * glm::radians(10.0f),
+		// 	    glm::vec3(0.0f, 0.0f, 1.0f));
+    //
+    // ubo.model *= glm::scale(glm::mat4(), glm::vec3(16.0f, 16.0f, 16.0f));
+    //
     ubo.view = glm::lookAt(glm::vec3(0.0f, -2.0f, 0.0f),
 			   glm::vec3(0.0f, 0.0f, 0.0f),
 			   glm::vec3(0.0f, 0.0f, 1.0f));
@@ -2020,7 +2009,7 @@ private:
                 * glm::scale(glm::mat4(), glm::vec3(0.5, 1.0, 1.0));
 
     // terrain
-    memcpy(data + 2, &ubo, sizeof (ubo));
+    memcpy(data, &ubo, sizeof (ubo));
 
     vkUnmapMemory(device, uniformBufferMemory);
   }
