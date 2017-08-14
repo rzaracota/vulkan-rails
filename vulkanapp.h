@@ -1947,7 +1947,7 @@ private:
   }
 
   glm::vec3 getVelocity() {
-    static const float scale = 1.0f;
+    static const float scale = 0.001f;
 
     float components[3] = { 0.0f, 0.0f, 0.0f };
 
@@ -2010,7 +2010,11 @@ private:
     std::cout << "velocity: " << velocity.x << ", "
               << velocity.y << ", " << velocity.z << std::endl;
 
-    ubo.model = glm::translate(glm::mat4(1.0), velocity)
+    static glm::vec3 position(0.0f, 0.0f, 0.0f);
+
+    position += velocity;
+
+    ubo.model = glm::translate(glm::mat4(1.0), position)
                 * glm::scale(glm::mat4(), glm::vec3(0.5, 1.0, 1.0));
 
     // terrain
