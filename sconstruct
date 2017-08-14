@@ -1,6 +1,8 @@
 SConscript(['shaders/sconscript', 'input/sconscript'])
 
-Program('driver', 'main.cpp', LIBS=['glfw', 'vulkan'])
+Program('driver', 'main.cpp', LIBS=['glfw', 'vulkan', 'evdev',
+                                    'inputmanager'],
+                              LIBPATH=['input'])
 
 Default('driver')
 
@@ -8,7 +10,7 @@ import os
 
 env = Environment(ENV = os.environ)
 
-test = env.Command('test', None, "./driver")
+test = env.Command('test', None, "LD_LIBRARY_PATH=./input ./driver")
 
 test_input = env.Command('test_input', None,
         "LD_LIBRARY_PATH=./input ./input/inputtest")
