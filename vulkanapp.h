@@ -1696,7 +1696,7 @@ private:
       renderPassInfo.renderArea.offset = {0, 0};
       renderPassInfo.renderArea.extent = swapChainExtent;
 
-      VkClearColorValue clearColor = {0.0f, 0.3f, 0.0f, 1.0f};
+      VkClearColorValue clearColor = {0.0f, 0.0f, 0.2f, 1.0f};
 
       std::array<VkClearValue, 2> clearValues = {};
 
@@ -1841,7 +1841,7 @@ private:
   void createDescriptorSets() {
     auto mesh = getMesh("pixy1");
 
-    loadTexture(*mesh, "textures/pixy.png");
+    loadTexture(*mesh, "assets/planes/monoplane.png");
 
     std::for_each(meshes.cbegin(), meshes.cend(), [&] (auto item) {
 	     createDescriptorSet(*item.second);
@@ -2003,7 +2003,15 @@ private:
 
     static glm::vec3 position(0.0f, 0.0f, 0.0f);
 
-    position += velocity;
+    static const glm::vec3 left(-1.3f, 0.0f, 0.55f);
+    static const glm::vec3 right(1.3f, 0.0f, -0.55f); // use ship instead
+
+    auto newPosition = position + velocity;
+
+    if (newPosition.x > left.x && newPosition.x < right.x
+        && newPosition.z < left.z && newPosition.z > right.z) {
+      position = newPosition;
+    }
 
     ubo.model = glm::translate(glm::mat4(1.0), position)
                 * glm::scale(glm::mat4(), glm::vec3(0.5, 1.0, 1.0));
