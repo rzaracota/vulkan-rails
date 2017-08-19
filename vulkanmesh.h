@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 struct Mesh {
   Mesh(VkDevice dev, std::string filename,
        std::string texPath = TEXTURE_PATH) : device(dev), path(filename),
@@ -49,6 +51,11 @@ struct Mesh {
   VkDescriptorSet descriptorSet;
 
   std::string texturePath;
+
+  glm::vec3 position;
+  glm::vec3 velocity;
+
+  // orientation
 
 private:
   VkDevice device;

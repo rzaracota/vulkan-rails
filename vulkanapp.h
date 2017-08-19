@@ -2006,18 +2006,22 @@ private:
     static const glm::vec3 left(-1.3f, 0.0f, 0.55f);
     static const glm::vec3 right(1.3f, 0.0f, -0.55f); // use ship instead
 
-    auto newPosition = position + velocity;
+    auto mesh = getMesh("pixy1");
 
-    if (newPosition.x > left.x && newPosition.x < right.x
-        && newPosition.z < left.z && newPosition.z > right.z) {
-      position = newPosition;
+    if (mesh != nullptr) {
+      auto newPosition = mesh->position + velocity;
+
+      if (newPosition.x > left.x && newPosition.x < right.x
+          && newPosition.z < left.z && newPosition.z > right.z) {
+        mesh->position = newPosition;
+      }
+
+      ubo.model = glm::translate(glm::mat4(1.0), mesh->position)
+                  * glm::scale(glm::mat4(), glm::vec3(0.5, 1.0, 1.0));
+
+      // terrain
+      memcpy(data, &ubo, sizeof (ubo));
     }
-
-    ubo.model = glm::translate(glm::mat4(1.0), position)
-                * glm::scale(glm::mat4(), glm::vec3(0.5, 1.0, 1.0));
-
-    // terrain
-    memcpy(data, &ubo, sizeof (ubo));
 
     vkUnmapMemory(device, uniformBufferMemory);
   }
