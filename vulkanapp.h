@@ -1996,8 +1996,6 @@ private:
 
     memcpy(data + 1, &ubo, sizeof (ubo));
 
-    auto velocity = getVelocity();
-
     // std::cout << "velocity: " << velocity.x << ", "
     //           << velocity.y << ", " << velocity.z << std::endl;
 
@@ -2009,7 +2007,8 @@ private:
     auto mesh = getMesh("pixy1");
 
     if (mesh != nullptr) {
-      auto newPosition = mesh->position + velocity;
+      mesh->velocity = getVelocity();
+      auto newPosition = mesh->position + mesh->velocity;
 
       if (newPosition.x > left.x && newPosition.x < right.x
           && newPosition.z < left.z && newPosition.z > right.z) {
