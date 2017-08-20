@@ -23,6 +23,10 @@ public:
 
   void Spawn(glm::vec3 origin, glm::vec3 velocity);
 
+  std::deque<std::shared_ptr<Particle>> getParticles() const {
+    return inactiveParticles;
+  }
+
 private:
   void setup_buffers();
   void initialize_particles();

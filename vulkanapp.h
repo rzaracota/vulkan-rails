@@ -1318,7 +1318,15 @@ private:
     vkBindImageMemory(device, image, imageMemory, 0);
   }
 
-  void createTextureImage(const std::string filename = TEXTURE_PATH) {
+  bool createTextureImage(const std::string filename = TEXTURE_PATH) {
+    auto iter = textures.find(filename);
+
+    if (iter != textures.end()) {
+      std::cout << "Texture " << filename << " already loaded." << std::endl;
+
+      return false;
+    }
+
     auto texture = std::make_shared<Texture>(device, filename);
 
     int texWidth, texHeight;
@@ -1371,6 +1379,8 @@ private:
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+    return true;
   }
 
   void createTextureImageView(std::string filename = TEXTURE_PATH) {
@@ -1835,9 +1845,10 @@ private:
   void loadTexture(Mesh & mesh, std::string textureFilename) {
     mesh.texturePath = textureFilename;
 
-    createTextureImage(mesh.texturePath);
-    createTextureImageView(mesh.texturePath);
-    createTextureSampler(mesh.texturePath);
+    if (createTextureImage(mesh.texturePath)) {
+      createTextureImageView(mesh.texturePath);
+      createTextureSampler(mesh.texturePath);
+    }
   }
 
   void createDescriptorSets() {
@@ -1872,11 +1883,29 @@ private:
     createSemaphores();
   }
 
-  void initRails() {
-    inputManager.Init();
+  void setupParticles() {
     particleEngine = std::make_unique<ParticleEngine>(vulkanDevice);
 
     particleEngine->Init();
+
+    auto particles = particleEngine->getParticles();
+
+    for (auto particle : particles) {
+      meshes.insert({ particle->path, particle });
+
+      createVertexBuffer(particle->path);
+      createIndexBuffer(particle->path);
+
+      loadTexture(*particle, "assets/particles/particle.png");
+
+      createDescriptorSet(*particle);
+    }
+  }
+
+  void initRails() {
+    inputManager.Init();
+
+    setupParticles();
   }
 
   void drawFrame() {

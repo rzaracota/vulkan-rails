@@ -27,8 +27,9 @@ void ParticleEngine::setup_buffers() {
 void ParticleEngine::initialize_particles() {
   inactiveParticles.clear();
   for (int i = 0; i < maxParticles; i++) {
-    inactiveParticles.push_back(std::make_shared<Particle>(device->getLogicalDevice(),
-                                "particle" + std::to_string(i)));
+    auto particle = std::make_shared<Particle>(device->getLogicalDevice(),
+                                "particle" + std::to_string(i));
+    inactiveParticles.push_back(particle);
   }
 }
 
