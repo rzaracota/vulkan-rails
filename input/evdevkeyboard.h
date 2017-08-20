@@ -32,6 +32,8 @@ public:
     evKC.insert({KEY_RIGHT, KC_Right});
     evKC.insert({KEY_UP, KC_Up});
     evKC.insert({KEY_DOWN, KC_Down});
+
+    evKC.insert({KEY_SPACE, KC_Space});
   }
 
   static void print_event(const struct input_event & event) {
