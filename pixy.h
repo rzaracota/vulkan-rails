@@ -4,9 +4,13 @@
  **/
 #pragma once
 
+#include "rails.h"
+
+#include "vulkanmesh.h"
+
 struct Pixy : public Mesh {
   Pixy(VkDevice dev, std::string filename,
-       std::string texPath = TEXTURE_PATH) : Mesh(dev, filename) {
+       std::string texPath = "chalet/cube.png") : Mesh(dev, filename) {
     generate();
   }
 

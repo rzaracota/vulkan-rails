@@ -2,9 +2,15 @@
 
 #include <glm/glm.hpp>
 
+#include "rails.h"
+
+#include "vulkanvertex.h"
+
+#include "vulkanutil.h"
+
 struct Mesh {
   Mesh(VkDevice dev, std::string filename,
-       std::string texPath = TEXTURE_PATH) : device(dev), path(filename),
+       std::string texPath = "chalet/cube.png") : device(dev), path(filename),
 					     texturePath(texPath) {
   }
 
