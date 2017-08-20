@@ -1545,7 +1545,7 @@ private:
 
   void createUniformBuffer() {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject) *
-      meshes.size();
+      (meshes.size() + 5); // memory overrun; TODO: Find it!
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -2028,6 +2028,13 @@ private:
     vkUnmapMemory(device, uniformBufferMemory);
   }
 
+  void updateInput() {
+    if (inputManager.getKeyboardKeyState(KC_Space)) {
+      particleEngine->Spawn(glm::vec3(0.0, 0.0, 0.0),
+                            glm::vec3(0.1, 0.0, 0.0));
+    }
+  }
+
   void mainLoop() {
     while (!glfwWindowShouldClose(window)
             && !inputManager.getKeyboardKeyState(KC_Escape)) {
@@ -2035,6 +2042,8 @@ private:
       auto startTime = std::chrono::high_resolution_clock::now();
 
       glfwPollEvents();
+
+      updateInput();
 
       updateUniformBuffer();
 

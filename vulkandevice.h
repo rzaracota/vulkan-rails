@@ -15,6 +15,8 @@ public:
 		    VkMemoryPropertyFlags properties, VkBuffer& buffer,
 		    VkDeviceMemory& bufferMemory);
 
+  VkDevice getLogicalDevice() const { return device; }
+
 private:
   VkDevice device;
   VkPhysicalDevice physicalDevice;

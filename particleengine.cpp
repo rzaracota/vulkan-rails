@@ -24,8 +24,17 @@ void ParticleEngine::setup_buffers() {
 		 uniformBuffer, uniformBufferMemory);
 }
 
+void ParticleEngine::initialize_particles() {
+  inactiveParticles.clear();
+  for (int i = 0; i < maxParticles; i++) {
+    inactiveParticles.push_back(std::make_shared<Particle>(device->getLogicalDevice(),
+                                "particle" + std::to_string(i)));
+  }
+}
+
 void ParticleEngine::Init() {
   setup_buffers();
+  initialize_particles();
 }
 
 void ParticleEngine::Update() {
@@ -38,4 +47,10 @@ void ParticleEngine::Update() {
         [] (auto pair) {
           // setup uniform buffer
         });
+}
+
+void ParticleEngine::Spawn(glm::vec3 origin, glm::vec3 velocity) {
+  if (!inactiveParticles.empty()) {
+    throw std::runtime_error("No more space for particles.");
+  }
 }

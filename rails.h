@@ -5,6 +5,8 @@
 
 #include <vector>
 #include <iostream>
+#include <exception>
+#include <deque>
 #include <unordered_map>
 
 #include <algorithm>

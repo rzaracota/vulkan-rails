@@ -20,11 +20,15 @@ public:
   void Init();
 
   void Update();
+
+  void Spawn(glm::vec3 origin, glm::vec3 velocity);
+
 private:
   void setup_buffers();
+  void initialize_particles();
 
   std::unordered_map<int,std::shared_ptr<Particle>> activeParticles;
-  std::unordered_map<int,std::shared_ptr<Particle>> inactiveParticles;
+  std::deque<std::shared_ptr<Particle>> inactiveParticles;
 
   int maxParticles;
 private: // vulkan
