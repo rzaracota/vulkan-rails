@@ -14,7 +14,7 @@ public:
 
   }
 
-  void update() {
+  void Update() {
     lifetime -= decay;
   }
 private:

@@ -1,3 +1,5 @@
+#include "rails.h"
+
 #include "particleengine.h"
 
 #include "ubo.h"
@@ -27,5 +29,13 @@ void ParticleEngine::Init() {
 }
 
 void ParticleEngine::Update() {
+  std::for_each(activeParticles.begin(), activeParticles.end(),
+        [] (auto pair) {
+          pair.second->Update();
+        });
 
+  std::for_each(activeParticles.begin(), activeParticles.end(),
+        [] (auto pair) {
+          // setup uniform buffer
+        });
 }
