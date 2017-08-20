@@ -38,10 +38,20 @@ void ParticleEngine::Init() {
 }
 
 void ParticleEngine::Update() {
-  std::for_each(activeParticles.begin(), activeParticles.end(),
-        [] (auto pair) {
-          pair.second->Update();
-        });
+  for (auto iter = activeParticles.begin();
+        iter != activeParticles.end();) {
+    if (iter->second->lifetime < 0.0) {
+      std::cout << "Particle is dying: " << iter->second->path;
+
+      inactiveParticles.push_back(iter->second);
+
+      iter = activeParticles.erase(iter);
+    } else {
+      iter->second->Update();
+
+      iter++;
+    }
+  }
 
   std::for_each(activeParticles.begin(), activeParticles.end(),
         [] (auto pair) {
@@ -50,7 +60,13 @@ void ParticleEngine::Update() {
 }
 
 void ParticleEngine::Spawn(glm::vec3 origin, glm::vec3 velocity) {
-  if (!inactiveParticles.empty()) {
+  if (inactiveParticles.empty()) {
     throw std::runtime_error("No more space for particles.");
   }
+
+  auto p = inactiveParticles.front();
+
+  activeParticles.insert({ p->id, p });
+
+  inactiveParticles.pop_front();
 }

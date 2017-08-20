@@ -1,19 +1,25 @@
 SConscript(['shaders/sconscript', 'input/sconscript'])
 
-Program('driver', ['main.cpp', 'vulkandevice.cpp', 'particleengine.cpp'],
-                    LIBS=['glfw', 'vulkan', 'evdev', 'inputmanager'],
-                    LIBPATH=['input'])
-
 Default('driver')
 
 import os
 
 env = Environment(ENV = os.environ)
 
+env.Append(CCFLAGS='-g')
+
+env.Program('driver', ['main.cpp', 'vulkandevice.cpp', 'particleengine.cpp'],
+                            LIBS=['glfw', 'vulkan', 'evdev', 'inputmanager'],
+                            LIBPATH=['input'])
+
 test = env.Command('test', None, "LD_LIBRARY_PATH=./input ./driver")
+
+test_debug = env.Command('test_debug', None,
+                            "LD_LIBRARY_PATH=./input gdb ./driver")
 
 test_input = env.Command('test_input', None,
         "LD_LIBRARY_PATH=./input ./input/inputtest")
 
 Depends(test, 'driver')
+Depends(test_debug, 'driver')
 Depends(test_input, 'input/inputtest')

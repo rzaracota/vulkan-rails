@@ -1875,6 +1875,8 @@ private:
   void initRails() {
     inputManager.Init();
     particleEngine = std::make_unique<ParticleEngine>(vulkanDevice);
+
+    particleEngine->Init();
   }
 
   void drawFrame() {
