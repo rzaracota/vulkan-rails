@@ -62,6 +62,8 @@ const std::string patchIdentifier = "terrainPatch";
 
 #include "ubo.h"
 
+#include "particleengine.h"
+
 struct TerrainPatch {
 public:
   TerrainPatch(const int patchSize = 16, const double patchSpacing = 1.0) :
@@ -1872,6 +1874,7 @@ private:
 
   void initRails() {
     inputManager.Init();
+    particleEngine = std::make_unique<ParticleEngine>(vulkanDevice);
   }
 
   void drawFrame() {
@@ -2035,6 +2038,8 @@ private:
 
       updateUniformBuffer();
 
+      particleEngine->Update();
+
       drawFrame();
 
       // timer end
@@ -2081,6 +2086,8 @@ private:
 
     glfwTerminate();
   }
+
+  std::unique_ptr<ParticleEngine> particleEngine;
 
   std::shared_ptr<VulkanDevice> vulkanDevice;
 
