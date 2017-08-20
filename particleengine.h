@@ -6,12 +6,15 @@
 
 #include "rails.h"
 
+#include "vulkandevice.h"
+
 #include "particle.h"
 
 
 class ParticleEngine {
 public:
-  ParticleEngine(const int initMaxParticles = 100);
+  ParticleEngine(const std::shared_ptr<VulkanDevice> inDevice,
+                 const int initMaxParticles = 100);
   ~ParticleEngine();
 
   void Init();
@@ -27,4 +30,6 @@ private:
 private: // vulkan
   VkBuffer uniformBuffer;
   VkDeviceMemory uniformBufferMemory;
+
+  const std::shared_ptr<VulkanDevice> device;
 };

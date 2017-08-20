@@ -37,6 +37,8 @@ const std::string TEXTURE_PATH = "chalet/cube.png";
 
 #include "vulkanutil.h"
 
+#include "vulkandevice.h"
+
 #include "vulkanvertex.h"
 #include "vulkantexture.h"
 
@@ -54,15 +56,11 @@ const std::string TEXTURE_PATH = "chalet/cube.png";
 
 const std::string patchIdentifier = "terrainPatch";
 
-struct UniformBufferObject {
-  glm::mat4 model;
-  glm::mat4 view;
-  glm::mat4 proj;
-};
-
 #include <random>
 
 #include "input/evdevinputmanager.h"
+
+#include "ubo.h"
 
 struct TerrainPatch {
 public:
@@ -543,6 +541,8 @@ private:
 
     vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily, 0, &presentQueue);
+
+    vulkanDevice = std::make_shared<VulkanDevice>(device, physicalDevice);
   }
 
   struct SwapChainSupportDetails {
@@ -2081,6 +2081,8 @@ private:
 
     glfwTerminate();
   }
+
+  std::shared_ptr<VulkanDevice> vulkanDevice;
 
   EVInputManager inputManager;
 

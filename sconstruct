@@ -1,6 +1,6 @@
 SConscript(['shaders/sconscript', 'input/sconscript'])
 
-Program('driver', ['main.cpp', 'particleengine.cpp'],
+Program('driver', ['main.cpp', 'vulkandevice.cpp', 'particleengine.cpp'],
                     LIBS=['glfw', 'vulkan', 'evdev', 'inputmanager'],
                     LIBPATH=['input'])
 
