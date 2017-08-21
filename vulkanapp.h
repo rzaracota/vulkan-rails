@@ -2097,7 +2097,8 @@ private:
     int offset = 0;
 
     for (auto pair : particleEngine->getActiveParticles()) {
-      ubo.model = glm::translate(glm::mat4(), pair.second->position);
+      ubo.model = glm::translate(glm::mat4(), pair.second->position)
+                   * glm::scale(glm::mat4(), glm::vec3(0.1, 0.1, 0.1));
 
       memcpy(data + offset++, &ubo, sizeof (ubo));
     }

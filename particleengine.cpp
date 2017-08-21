@@ -78,6 +78,8 @@ void ParticleEngine::Spawn(glm::vec3 origin, glm::vec3 velocity) {
   p->position = origin;
   p->velocity = velocity;
 
+  p->revive();
+
   activeParticles.insert({ p->id, p });
 
   inactiveParticles.pop_front();

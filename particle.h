@@ -25,14 +25,21 @@ public:
 
     lifetime -= decay;
 
-    if (lifetime < 0.0) alive = false;
+    alive = (lifetime < 0.0) ? false : true;
 
     position += velocity;
   }
 
   inline bool isAlive() const { return alive; }
 
+  inline void revive() {
+    alive = true;
+    lifetime = defaultLifetime;
+  }
+
   static constexpr double decay = 0.1;
+
+  static constexpr double defaultLifetime = 1000.0;
 
   double lifetime;
 
