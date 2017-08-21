@@ -2108,10 +2108,20 @@ private:
 
   void updateInput() {
     if (inputManager.getKeyboardKeyState(KC_Space)) {
-      auto player = getMesh("pixy1");
+      static auto player = getMesh("pixy1");
 
-      particleEngine->Spawn(player->position,
-                            glm::vec3(0.001, 0.0, 0.0));
+      static auto startTime = std::chrono::high_resolution_clock::now();
+
+      auto currentTime = std::chrono::high_resolution_clock::now();
+
+      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+
+      if (elapsed > 1000.0 / 8.0) {
+        startTime = currentTime;
+
+        particleEngine->Spawn(player->position,
+                              glm::vec3(0.001, 0.0, 0.0));
+      }
     }
   }
 
