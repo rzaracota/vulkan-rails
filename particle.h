@@ -26,6 +26,8 @@ public:
     lifetime -= decay;
 
     if (lifetime < 0.0) alive = false;
+
+    position += velocity;
   }
 
   inline bool isAlive() const { return alive; }

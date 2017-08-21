@@ -2107,8 +2107,10 @@ private:
 
   void updateInput() {
     if (inputManager.getKeyboardKeyState(KC_Space)) {
-      particleEngine->Spawn(glm::vec3(-0.5, 0.0, 0.0),
-                            glm::vec3(0.0, 0.0, 0.0));
+      auto player = getMesh("pixy1");
+
+      particleEngine->Spawn(player->position,
+                            glm::vec3(0.001, 0.0, 0.0));
     }
   }
 
