@@ -8,7 +8,7 @@ ParticleEngine::ParticleEngine(const std::shared_ptr<VulkanDevice> vDevice,
                                const int initMaxParticles) :
                                   device(vDevice),
                                   maxParticles(initMaxParticles) {
-
+      activeParticles.reserve(maxParticles);
 }
 
 ParticleEngine::~ParticleEngine() {
@@ -50,8 +50,6 @@ void ParticleEngine::Update() {
   for (auto iter = activeParticles.begin();
         iter != activeParticles.end();) {
     if (iter->second->lifetime < 0.0) {
-      std::cout << "Particle is dying: " << iter->second->path;
-
       inactiveParticles.push_back(iter->second);
 
       iter = activeParticles.erase(iter);

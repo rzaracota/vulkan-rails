@@ -12,8 +12,6 @@ public:
                 static int idSeed = 0;
 
                 id = idSeed++;
-
-                std::cout << "Particle spawned" << std::endl;
   }
 
   ~Particle() {
@@ -21,8 +19,6 @@ public:
   }
 
   void Update() {
-    std::cout << "Updating particle: " << path << std::endl;
-
     lifetime -= decay;
 
     alive = (lifetime < 0.0) ? false : true;

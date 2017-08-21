@@ -8,7 +8,10 @@ env = Environment(ENV = os.environ)
 
 env.Append(CCFLAGS='-g')
 
-env.Program('driver', ['main.cpp', 'vulkandevice.cpp', 'particleengine.cpp'],
+binary = 'driver'
+library_path = 'LD_LIBRARY_PATH=./input'
+
+env.Program(binary, ['main.cpp', 'vulkandevice.cpp', 'particleengine.cpp'],
                             LIBS=['glfw', 'vulkan', 'evdev', 'inputmanager'],
                             LIBPATH=['input'])
 
@@ -20,6 +23,15 @@ test_debug = env.Command('test_debug', None,
 test_input = env.Command('test_input', None,
         "LD_LIBRARY_PATH=./input ./input/inputtest")
 
-Depends(test, 'driver')
-Depends(test_debug, 'driver')
+cachegrind = env.Command('cachegrind', None,
+        ' '.join([library_path, 'valgrind --tool=cachegrind', './' + binary]))
+
+callgrind = env.Command('callgrind', None,
+        ' '.join([library_path, 'valgrind --tool=callgrind', './' + binary]))
+
+Depends(binary, 'vulkanapp.h')
+Depends(test, binary)
+Depends(test_debug, binary)
 Depends(test_input, 'input/inputtest')
+Depends(cachegrind, binary)
+Depends(callgrind, binary)
