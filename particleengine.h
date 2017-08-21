@@ -10,7 +10,6 @@
 
 #include "particle.h"
 
-
 class ParticleEngine {
 public:
   ParticleEngine(const std::shared_ptr<VulkanDevice> inDevice,

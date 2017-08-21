@@ -1754,9 +1754,6 @@ private:
         for (auto particle : particleEngine->getParticles()) {
           VkBuffer vertexBuffers[] = { particle->vertexBuffer };
           VkDeviceSize offsets[] = { 0 };
-
-          std::cout << "doing particle stuff" << std::endl;
-
           vkCmdBindDescriptorSets(commandBuffers[i],
           		VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
           		0, 1, &particle->descriptorSet, 0, nullptr);
@@ -1920,8 +1917,6 @@ private:
     auto particles = particleEngine->getParticles();
 
     for (auto particle : particles) {
-      std::cout << "Creating device resources for particles" << std::endl;
-
       meshes.insert({ particle->path, particle });
 
       createVertexBuffer(particle->path);
