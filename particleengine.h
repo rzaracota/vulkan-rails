@@ -27,17 +27,28 @@ public:
     return inactiveParticles;
   }
 
+  std::unordered_map<int, std::shared_ptr<Particle>> getActiveParticles() {
+    return activeParticles;
+  }
+
+  int getUniformBufferSize() const;
+
 private:
   void setup_buffers();
   void initialize_particles();
 
-  std::unordered_map<int,std::shared_ptr<Particle>> activeParticles;
   std::deque<std::shared_ptr<Particle>> inactiveParticles;
+  std::unordered_map<int,std::shared_ptr<Particle>> activeParticles;
 
   int maxParticles;
-private: // vulkan
+
+public:
   VkBuffer uniformBuffer;
+
   VkDeviceMemory uniformBufferMemory;
+
+private:
+  int uniformBufferSize;
 
   const std::shared_ptr<VulkanDevice> device;
 };

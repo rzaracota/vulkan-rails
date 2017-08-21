@@ -1586,7 +1586,11 @@ private:
     }
   }
 
-  void createDescriptorSet(Mesh & mesh) {
+  void createDescriptorSet(Mesh & mesh, VkBuffer uniBuffer = VK_NULL_HANDLE) {
+    if (uniBuffer == VK_NULL_HANDLE) {
+      uniBuffer = uniformBuffer;
+    }
+
     VkDescriptorSetLayout layouts[] = {descriptorSetLayout};
     VkDescriptorSetAllocateInfo allocInfo = {};
 
@@ -1602,7 +1606,7 @@ private:
 
     VkDescriptorBufferInfo bufferInfo = {};
 
-    bufferInfo.buffer = uniformBuffer;
+    bufferInfo.buffer = uniBuffer;
     bufferInfo.offset = 0; // increase by sizeof (ubo)?
     bufferInfo.range = sizeof(UniformBufferObject) * meshes.size();
 
@@ -1746,6 +1750,31 @@ private:
 			 1, 0, 0, meshID);
       }
 
+      int particleID = 0;
+
+      if (!particleEngine->getParticles().empty()) {
+        for (auto particle : particleEngine->getParticles()) {
+          VkBuffer vertexBuffers[] = { particle->vertexBuffer };
+          VkDeviceSize offsets[] = { 0 };
+
+          vkCmdBindDescriptorSets(commandBuffers[i],
+          		VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+          		0, 1, &particle->descriptorSet, 0, nullptr);
+
+          vkCmdBindVertexBuffers(commandBuffers[i],
+          	       0, 1, vertexBuffers, offsets);
+
+          vkCmdBindIndexBuffer(commandBuffers[i], particle->indexBuffer, 0,
+          	     VK_INDEX_TYPE_UINT32);
+
+          vkCmdDrawIndexed(commandBuffers[i],
+          	 static_cast<uint32_t>(particle->indices.size()),
+          	 1, 0, 0, particleID);
+
+          particleID++;
+        }
+      }
+
       vkCmdEndRenderPass(commandBuffers[i]);
 
       if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -1879,7 +1908,7 @@ private:
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSets();
-    createCommandBuffers();
+    //createCommandBuffers();
     createSemaphores();
   }
 
@@ -1898,7 +1927,9 @@ private:
 
       loadTexture(*particle, "assets/particles/particle.png");
 
-      createDescriptorSet(*particle);
+      createDescriptorSet(*particle, particleEngine->uniformBuffer);
+
+      meshes.erase(particle->path);
     }
   }
 
@@ -1906,6 +1937,8 @@ private:
     inputManager.Init();
 
     setupParticles();
+
+    createCommandBuffers();
   }
 
   void drawFrame() {
@@ -2057,12 +2090,25 @@ private:
     }
 
     vkUnmapMemory(device, uniformBufferMemory);
+
+    vkMapMemory(device, particleEngine->uniformBufferMemory, 0,
+      particleEngine->getUniformBufferSize(),	0, (void **)&data);
+
+    int offset = 0;
+
+    for (auto pair : particleEngine->getActiveParticles()) {
+      ubo.model = glm::translate(glm::mat4(), pair.second->position);
+
+      memcpy(data + offset++, &ubo, sizeof (ubo));
+    }
+
+    vkUnmapMemory(device, particleEngine->uniformBufferMemory);
   }
 
   void updateInput() {
     if (inputManager.getKeyboardKeyState(KC_Space)) {
-      particleEngine->Spawn(glm::vec3(0.0, 0.0, 0.0),
-                            glm::vec3(0.1, 0.0, 0.0));
+      particleEngine->Spawn(glm::vec3(-0.5, 0.0, 0.0),
+                            glm::vec3(0.0, 0.0, 0.0));
     }
   }
 

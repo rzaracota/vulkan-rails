@@ -15,8 +15,14 @@ ParticleEngine::~ParticleEngine() {
 
 }
 
+int ParticleEngine::getUniformBufferSize() const {
+  return uniformBufferSize;
+}
+
 void ParticleEngine::setup_buffers() {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject) * maxParticles;
+
+    uniformBufferSize = sizeof (UniformBufferObject) * maxParticles;
 
     device->createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -26,6 +32,8 @@ void ParticleEngine::setup_buffers() {
 
 void ParticleEngine::initialize_particles() {
   inactiveParticles.clear();
+  activeParticles.clear();
+
   for (int i = 0; i < maxParticles; i++) {
     auto particle = std::make_shared<Particle>(device->getLogicalDevice(),
                                 "particle" + std::to_string(i));
@@ -66,6 +74,9 @@ void ParticleEngine::Spawn(glm::vec3 origin, glm::vec3 velocity) {
   }
 
   auto p = inactiveParticles.front();
+
+  p->position = origin;
+  p->velocity = velocity;
 
   activeParticles.insert({ p->id, p });
 
