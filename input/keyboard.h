@@ -32,8 +32,8 @@ public:
     return keys.at(key);
   }
 
-  void toggleKey(KeyConstant key) {
-    keys[key] = !keys.at(key);
+  void setKey(KeyConstant key, bool state) {
+    keys[key] = state;
   }
 
   void reinitialize() {

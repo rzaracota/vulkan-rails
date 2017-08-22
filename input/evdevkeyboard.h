@@ -41,7 +41,7 @@ public:
               << libevdev_event_type_get_name(event.type)
               << " code: " << event.code << " "
               << libevdev_event_code_get_name(event.type, event.code)
-              << std::endl;
+              << " value: " << event.value << std::endl;
   }
 
   void handleEvents() override {
@@ -69,7 +69,11 @@ public:
         auto iter = evKC.find(event.code);
 
         if (iter != evKC.end()) {
-          toggleKey(iter->second);
+      	  if (event.value == KS_Down || event.value == KS_Repeat) {
+      	    setKey(iter->second, true);
+      	  } else {
+      	    setKey(iter->second, false);
+      	  }
         }
       }
     }

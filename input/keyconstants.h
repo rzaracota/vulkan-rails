@@ -3,6 +3,12 @@
  **/
 #pragma once
 
+typedef enum _KeyState {
+  KS_Down,
+  KS_Up,
+  KS_Repeat
+} KeyState;
+
 typedef enum _KeyConstant {
   KC_Escape = 0,
   KC_Space,
