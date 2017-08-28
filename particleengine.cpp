@@ -12,7 +12,8 @@ ParticleEngine::ParticleEngine(const std::shared_ptr<VulkanDevice> vDevice,
 }
 
 ParticleEngine::~ParticleEngine() {
-
+  vkDestroyBuffer(device->getLogicalDevice(), uniformBuffer, nullptr);
+  vkFreeMemory(device->getLogicalDevice(), uniformBufferMemory, nullptr);
 }
 
 int ParticleEngine::getUniformBufferSize() const {

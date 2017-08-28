@@ -8,10 +8,6 @@ struct Texture {
   ~Texture() {
     std::cout << "Destroying texture: " << path << std::endl;
 
-    // if (sampler != VK_NULL_HANDLE) {
-    //   vkDestroySampler(device, sampler, nullptr);
-    // }
-
     safe_destroy_vk<VkSampler>(vkDestroySampler, device, sampler, nullptr);
 
     if (imageView != VK_NULL_HANDLE) {

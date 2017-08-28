@@ -2122,21 +2122,67 @@ private:
     }
   }
 
+  struct FunctionTimer {
+    void begin() {
+      startTime = std::chrono::high_resolution_clock::now();
+    }
+
+    void end() {
+      endTime = std::chrono::high_resolution_clock::now();
+    }
+
+    void report(std::string functionName) {
+      std::chrono::duration<double, std::milli> runtime = endTime - startTime;
+
+      std::cout << functionName << " runtime: " << runtime.count() << std::endl;
+    }
+
+    std::chrono::high_resolution_clock::time_point startTime, endTime;
+  };
+
   void mainLoop() {
     while (!glfwWindowShouldClose(window)
             && !inputManager.getKeyboardKeyState(KC_Escape)) {
       // timer start
       auto startTime = std::chrono::high_resolution_clock::now();
 
+      FunctionTimer ft;
+
+      ft.begin();
+
       glfwPollEvents();
+
+      ft.end();
+
+      ft.report("glfwPollEvents");
+
+      ft.begin();
 
       updateInput();
 
+      ft.end();
+      ft.report("updateInput");
+
+      ft.begin();
+
       updateUniformBuffer();
+
+      ft.end();
+      ft.report("updateUniformBuffer");
+
+      ft.begin();
 
       particleEngine->Update();
 
+      ft.end();
+      ft.report("particleEngine->Update");
+
+      ft.begin();
+
       drawFrame();
+
+      ft.end();
+      ft.report("drawFrame");
 
       // timer end
       auto endTime = std::chrono::high_resolution_clock::now();
@@ -2151,7 +2197,15 @@ private:
     vkDeviceWaitIdle(device);
   }
 
+  void cleanupRails() {
+    if (particleEngine != nullptr) {
+      particleEngine = nullptr;
+    }
+  }
+
   void cleanup() {
+    cleanupRails();
+
     cleanupSwapChain();
 
     textures.clear();
