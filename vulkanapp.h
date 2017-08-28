@@ -1930,8 +1930,22 @@ private:
     }
   }
 
+  static void escapeCallback(void * vulkanApp) {
+    VulkanApp * app = static_cast<VulkanApp*>(vulkanApp);
+
+    std::cout << "Escape callback" << std::endl;
+
+    app->running = false;
+  }
+
+  void registerCallbacks() {
+    inputManager.registerCallback(escapeCallback, this, KC_Escape);
+  }
+
   void initRails() {
     inputManager.Init();
+
+    registerCallbacks();
 
     setupParticles();
 
@@ -2140,9 +2154,12 @@ private:
     std::chrono::high_resolution_clock::time_point startTime, endTime;
   };
 
+  bool running;
+
   void mainLoop() {
-    while (!glfwWindowShouldClose(window)
-            && !inputManager.getKeyboardKeyState(KC_Escape)) {
+    running = true;
+
+    while (!glfwWindowShouldClose(window) && running) {
       // timer start
       auto startTime = std::chrono::high_resolution_clock::now();
 

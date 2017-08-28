@@ -40,6 +40,9 @@ class InputManager {
 
    bool getKeyboardKeyState(KeyConstant key) const;
 
+   void registerCallback(void (*callback)(void * data), void * data,
+                         KeyConstant key);
+
    static std::string DeviceClassNames(const DeviceClass & cl) {
       return device_class_names[cl];
    }

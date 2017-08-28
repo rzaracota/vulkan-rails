@@ -11,6 +11,24 @@
 
 #include "keyconstants.h"
 
+struct Callback {
+  Callback() {}
+  
+  Callback(void (*callback)(void *cbData),
+           void * dataPtr) : data(dataPtr) {
+
+  }
+
+  void operator()() {
+    if (callback != nullptr) {
+      callback(data);
+    }
+  }
+
+  void * data;
+  void (*callback)(void*);
+};
+
 class Keyboard {
 public:
   Keyboard() {
@@ -32,8 +50,19 @@ public:
     return keys.at(key);
   }
 
+  void registerCallback(void (*callback)(void * data), void * data,
+                        KeyConstant key) {
+    Callback cb(callback, data);
+
+    callbacks.insert({ key,  cb });
+  }
+
   void setKey(KeyConstant key, bool state) {
     keys[key] = state;
+
+    if (state == false && callbacks.find(key) != callbacks.cend()) {
+      callbacks[key]();
+    }
   }
 
   void reinitialize() {
@@ -44,4 +73,5 @@ public:
 
 private:
   std::unordered_map<int, bool> keys;
+  std::unordered_map<KeyConstant, Callback> callbacks;
 };

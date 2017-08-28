@@ -57,6 +57,11 @@ bool InputManager::getKeyboardKeyState(KeyConstant key) const {
   return keyboards[0]->getKeyState(key);
 }
 
+void InputManager::registerCallback(void (*callback)(void * data),
+                                    void * data, KeyConstant key) {
+  keyboards[0]->registerCallback(callback, data, key);
+}
+
 void InputManager::add_keyboard(const std::shared_ptr<Keyboard> newKeyboard) {
   keyboards.push_back(newKeyboard);
 
